@@ -20,7 +20,7 @@ int main(int argc, char** argv){
 		char* endPtr;
 		memorySize = strtoul(argv[2], &endPtr, 10);
 
-		if(memorySize <= 0 || memorySize > 4294967296){
+		if(memorySize <= 0 || memorySize > 4294967295){
 			cout << "INSUFFICIENT MEMORY SPACE\n";
 			return 2;
 		}
