@@ -30,4 +30,6 @@ bool decode();
 
 bool execute();
 
+bool init_mem(unsigned int size);
+
 #endif

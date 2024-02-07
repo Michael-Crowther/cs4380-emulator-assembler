@@ -18,6 +18,11 @@ bool isValidRegister(unsigned int reg){
   return reg < num_gen_regs;
 };
 
+bool init_mem(unsigned int size){
+	prog_mem = new unsigned char[size];
+	return true;
+}
+
 bool fetch(){
 	unsigned int PC = reg_file[static_cast<int>(RegNames::PC)];
 	if(PC >= memorySize || PC + 8 > memorySize){
