@@ -2,33 +2,33 @@ import sys
 
 def parse_line(line):
 	#strip white space
-	trimmed_line = line.strip()
+	trimmed_line = line.strip() #remove whitespace from start and end of string
 
-	if not trimmed_line or trimmed_line.startswith(';'):
+	if not trimmed_line or trimmed_line.startswith(';'): #does not parse comments
 		return None
 
-	#handle end of line comments
+	#handles comments at end of line
 	code, _, comment = trimmed_line.partition(';')
 	code = code.strip()
 
+	if not code:
+		return None
+
+	parts = code.split(maxsplit=1)
 	#check if line is directive or instruction
-	if code:
-		#seperate labels from directives/instructions
-		parts = code.split(maxsplit=1)
-		if len(parts) == 1:
-			#handles no label
-			if parts[0].startswith('.'):
-				return 'directive', None, parts[0], comment.strip()
-			else:
-				return 'instruction', None, parts[0], comment.strip()
-	else:
-			#handles labels
-			label = parts[0]
+	if len(parts) == 2:
+		#if two parts, first part could be a label
+		if parts[0].endswith(':'):
+			label = parts[0][:-1] #remove colon from label
 			remainder = parts[1]
-			if remainder.startswith('.'):
-				return 'directive', label, remainder, comment.strip()
+			return 'instruction', label, remainder, comment.strip()
+	else:
+			#no label here
+			part = parts[0]
+			if part.startswith('.'):
+				return 'directive', None, part, comment.strip()
 			else:
-				return 'instruction', label, remainder, comment.strip()
+				return 'instruction', None, part, comment.strip()
 
 	return None
 
@@ -68,12 +68,13 @@ def process_directive(directive_line, line_num, symbol_table, bytecode):
 def process_instruction(instruction_line, line_num, symbol_table, bytecode):
 	_, _, instruction, _ = instruction_line
 	parts = instruction.split(maxsplit=1)
+	#print(f"instruction: {instruction}")
 	operator = parts[0].lower() #handle case insensitive
 	operands = parts[1].split(',') if len(parts) > 1 else []
 	opcode_map = {
 		'jmp': 1, 'mov': 7, 'movi': 8, 'lda': 9, 'str': 10, 'ldr': 11, 'stb': 12, 'ldb': 13,
 		'add': 18, 'addi': 19, 'sub': 20, 'subi': 21, 'mul': 22, 'muli': 23, 'div': 24,
-		'sdiv': 25, 'divi': 26
+		'sdiv': 25, 'divi': 26, 'trp': 31
 	}
 
 	#check for invalid operator
@@ -99,12 +100,15 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode):
 
 	elif operator in ['mov', 'add', 'sub', 'mul', 'div']:
 		for operand in operands:
+			operand = operand.strip()
 			if operand.lower().startswith('r'):
 				#register operand
 				reg_id = int(operand[1:])
 				bytecode.append(reg_id)
 			else:
 				#immediate value
+				if operand.startswith('#'):
+					operand = operand[1:]
 				value = int(operand)
 				bytecode.extend(value.to_bytes(4, byteorder='little', signed=True))
 
@@ -125,6 +129,11 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode):
 		else:
 			print(f"Assembler error encountered on line {line_num}!")
 			sys.exit(2)
+
+	elif operator == 'trp':
+		trap_code = int(operands[0])
+		bytecode.extend(trap_code.tobytes(1, byteorder='little', signed=False))	
+		bytecode.extend((0).to_bytes(7, byteorder='little', signed=False))
 
 	return symbol_table, bytecode
 
@@ -148,7 +157,7 @@ def assemble(filename):
 		if not parsed_line:
 			continue #skip empty lines and comments
 
-		line_type, label, components = parsed_line
+		line_type, label, components, _ = parsed_line
 
 		if line_type == 'directive':
 			symbol_table, bytecode = process_directive(parsed_line, line_num, symbol_table, bytecode)
