@@ -70,7 +70,7 @@ def process_directive(directive_line, line_num, symbol_table, bytecode):
 	#extend bytecode
 	bytecode.extend(bytes_to_add)
 
-	return symbol_table, bytecode
+	return bytecode
 
 
 def process_instruction(instruction_line, line_num, symbol_table, bytecode):
@@ -89,9 +89,7 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode):
 		print(f"Assembler error encountered on line {line_num}!")
 		sys.exit(2)
 
-	#convert operator to opcode
-	opcode = opcode_map[operator]
-	bytecode.append(opcode)
+	instruction_bytes = [opcode_map[operator]]
 	
 	#process operands from instruction type
 	if operator in ['jmp', 'lda', 'str', 'ldr', 'stb', 'ldb']:
@@ -99,11 +97,11 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode):
 			if operand.isdigit() or (operand.startswith('-') and operand[1:].isdigit()):
 				#numeric operand
 				value = int(operand)
-				bytecode.extend(value.to_bytes(4, byteorder='little', signed=True))
+				instruction_bytes.extend(value.to_bytes(4, byteorder='little', signed=True))
 			else:
 				#resolve address of label
 				address = symbol_table.get(operand.strip(), 0)
-				bytecode.extend(address.to_bytes(4, byteorder='little', signed=False))
+				instruction_bytes.extend(address.to_bytes(4, byteorder='little', signed=False))
 
 	elif operator in ['mov', 'add', 'sub', 'mul', 'div']:
 		for operand in operands:
@@ -111,19 +109,19 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode):
 			if operand.lower().startswith('r'):
 				#register operand
 				reg_id = int(operand[1:])
-				bytecode.append(reg_id)
+				instruction_bytes.append(reg_id)
 			else:
 				#immediate value
 				if operand.startswith('#'):
 					operand = operand[1:]
 				value = int(operand)
-				bytecode.extend(value.to_bytes(4, byteorder='little', signed=True))
+				instruction_bytes.extend(value.to_bytes(4, byteorder='little', signed=True))
 
 	elif operator in ['movi', 'addi', 'subi', 'muli', 'sdiv', 'divi']:
 		reg_operand = operands[0].lower()
 		if reg_operand.startswith('r'):
 			reg_id = int(reg_operand[1:])
-			bytecode.append(reg_id)
+			instruction_bytes.append(reg_id)
 		else:
 			print(f"Assembler error encountered on line {line_num}!")
 			sys.exit(2)
@@ -132,19 +130,29 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode):
 		imm_value_operand = operands[1]
 		if imm_value_operand.isdigit() or (imm_value_operand.startswith('-') and imm_value_operand[1:].isdigit()):
 			imm_value = int(imm_value_operand)
-			bytecode.extend(imm_value.to_bytes(4, byteorder='little', signed=True))
+			instruction_bytes.extend(imm_value.to_bytes(4, byteorder='little', signed=True))
 		else:
 			print(f"Assembler error encountered on line {line_num}!")
 			sys.exit(2)
 
 	elif operator == 'trp':
+		if len(operands) == 0:
+			print(f"Assembler error encountered on line {line_num}!")
+			sys.exit(2)
 		if operands[0].startswith('#'):
 			operands[0] = operands[0][1:]
 		trap_code = int(operands[0])
-		bytecode.extend(trap_code.to_bytes(1, byteorder='little', signed=False))	
-		bytecode.extend((0).to_bytes(4, byteorder='little', signed=False))
+		instruction_bytes.append(trap_code)
+		#bytecode.extend((0).to_bytes(6, byteorder='little', signed=False))
+	
+	while len(instruction_bytes) < 8:
+		instruction_bytes.append(0)
 
-	return symbol_table, bytecode
+	bytecode.extend(instruction_bytes)
+
+#	print(f"Line {line_num} bytecode: {instruction_bytes}")
+	
+	return bytecode
 
 
 
@@ -158,22 +166,27 @@ def assemble(filename):
 		sys.exit(1)
 
 	symbol_table = {}
+	address_counter = 0
 	bytecode = []
 
 	for line_num, line in enumerate(lines, 1):
 		parsed_line = parse_line(line)
-		print(f"Parsed line: {parsed_line}")
+		#print(f"Parsed line: {parsed_line}")
 
 		if not parsed_line:
 			continue #skip empty lines and comments
 
 		line_type, label, components = parsed_line
 
+		if label:
+			symbol_table[label] = address_counter
+		address_counter += 8
+
 		if line_type == 'directive':
-			symbol_table, bytecode = process_directive(parsed_line, line_num, symbol_table, bytecode)
+			bytecode = process_directive(parsed_line, line_num, symbol_table, bytecode)
 			pass
 		elif line_type == 'instruction':
-			symbol_table, bytecode = process_instruction(parsed_line, line_num, symbol_table, bytecode)
+			bytecode = process_instruction(parsed_line, line_num, symbol_table, bytecode)
 			pass
 		else:
 			print(f"Assembler error encountered on line {line_num}!")
