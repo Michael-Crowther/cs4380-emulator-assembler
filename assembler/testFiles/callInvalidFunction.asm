@@ -1,4 +1,5 @@
-START:  MOV R3, #72       ; 'H'
+JMP MAIN
+MAIN:  MOV R3, #72
         TRP #3
         MOV R3, #101      ; 'e'
         TRP #3
@@ -27,3 +28,5 @@ START:  MOV R3, #72       ; 'H'
 
         ; Terminate Program
         TRP #0            ; Assuming TRP #0 is the halt instruction
+JMP SECOND
+THIRD: MOV R3, #45
