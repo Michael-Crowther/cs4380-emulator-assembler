@@ -20,3 +20,4 @@ MAIN:   MOV R1, '\r'         ; Clear R1 to start with 0
         ; Assuming TRP #0 halts the program
         TRP #0             ; Terminate the program
 
+MAIN:	MOV R3, '\n'

@@ -1,6 +1,6 @@
             ;Starting  comment
-NUM .int #10               ; Initialize an integer variable with value 10
-CHAR .byt 'A'              ; Initialize a character variable with 'A'
+NUM .INT #10               ; Initialize an integer variable with value 10
+CHAR .BYT 'A'              ; Initialize a character variable with 'A'
 
 ; Code Section starts here
         JMP MAIN          ; Jump to start of the program
@@ -20,3 +20,4 @@ MAIN:   MOV R1, '\r'         ; Clear R1 to start with 0
         ; Assuming TRP #0 halts the program
         TRP #0             ; Terminate the program
 
+NUM2 .int #12

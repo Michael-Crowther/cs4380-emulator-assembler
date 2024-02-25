@@ -12,6 +12,7 @@ MAIN:   MOV R1, '\r'         ; Clear R1 to start with 0
 
         MOV R3, CHAR       ; Move ASCII value of 'A' into R3
         TRP #3             ; Print 'A' on the screen
+				JMP SECOND
 
         MOV R4, '\\'         ; Move 1 into R4
         SUB R2, R2, '\"'     ; Decrement NUM by 1
@@ -19,4 +20,3 @@ MAIN:   MOV R1, '\r'         ; Clear R1 to start with 0
 
         ; Assuming TRP #0 halts the program
         TRP #0             ; Terminate the program
-

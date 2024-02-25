@@ -16,7 +16,15 @@ def run_assembler(input_asm_file):
 @pytest.mark.parametrize("input_asm, expected_exit_code", [
     ("invalidLabel.asm", 2),
     ("invalidLabel2.asm", 2),
-    ("missing#.asm", 2),
+		("invalidDirective.asm", 2),
+		("invalidDirective2.asm", 2),
+		("invalidInstr.asm", 2),
+		("invalidInstr.asm", 2),
+		("invalidCodeSection.asm", 2),
+		("invalidDataSection.asm", 2),
+		("invalidMain.asm", 2),
+		("duplicateFunction.asm", 2),
+		("missingLabel.asm", 2)
 ])
 
 def test_assembler_errors(input_asm, expected_exit_code):
@@ -27,7 +35,8 @@ def test_assembler_errors(input_asm, expected_exit_code):
 
 @pytest.mark.parametrize("input_asm", [
 		"valid1.asm",
-		"valid2.asm",    
+		"valid2.asm",   
+		"validArrayInit.asm" 
 ])
 
 # Test case for the valid input file
