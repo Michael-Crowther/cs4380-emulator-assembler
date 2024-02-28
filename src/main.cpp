@@ -14,7 +14,6 @@ int main(int argc, char** argv){
 	}
 
 	string bytecodeFile = argv[1];
-	unsigned long memorySize = 131072;
 
 	if(argc == 3){
 		char* endPtr;
@@ -28,6 +27,8 @@ int main(int argc, char** argv){
 
 	//allocate program memory
   init_mem(memorySize);
+
+	//Need a way to confirm prog_mem was populated here
 
   //open binary file
   ifstream binaryFile(bytecodeFile, ios::binary);
@@ -52,13 +53,13 @@ int main(int argc, char** argv){
  	binaryFile.read(reinterpret_cast<char*>(prog_mem), memorySize);
 
 	//set PC register here
-	reg_file[static_cast<int>(RegNames::PC)] = *reinterpret_cast<unsigned int*>(prog_mem);
+	reg_file[RegNames::PC] = *reinterpret_cast<unsigned int*>(prog_mem);
 
 	//execution loop
 	bool running = true;
 	while(running){
 		if(!fetch() || !decode() || !execute()){
-			cout << "INVALID INSTRUCTION AT: " << reg_file[static_cast<int>(RegNames::PC)] << endl;
+			cout << "INVALID INSTRUCTION AT: " << reg_file[RegNames::PC] << endl;
 			return 1;
 		}
 	}

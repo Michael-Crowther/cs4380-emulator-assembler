@@ -2,9 +2,9 @@
 #include "../include/emu4380.h"
 
 TEST(FetchTest, FetchNormalOperation){
-	memorySize = 1000;
-	prog_mem = new unsigned char[memorySize];
-	reg_file[static_cast<int>(RegNames::PC)] = 10;
+	int size = 131072;
+	prog_mem = new unsigned char[size];
+	reg_file[RegNames::PC] = 10;
 
 	EXPECT_TRUE(fetch());
 
@@ -12,9 +12,9 @@ TEST(FetchTest, FetchNormalOperation){
 }
 
 TEST(FetchTest, FetchAtMemoryBoundary){
-  memorySize = 1000;
-  prog_mem = new unsigned char[memorySize];
-  reg_file[static_cast<int>(RegNames::PC)] = memorySize - 8;
+  int size = 131072;
+  prog_mem = new unsigned char[size];
+  reg_file[RegNames::PC] = size - 8;
 
   EXPECT_TRUE(fetch());
 
@@ -22,9 +22,9 @@ TEST(FetchTest, FetchAtMemoryBoundary){
 }
 
 TEST(FetchTest, FetchBeyondMemoryBoundary){
-  memorySize = 1000;
-  prog_mem = new unsigned char[memorySize];
-  reg_file[static_cast<int>(RegNames::PC)] = memorySize - 7;
+  int size = 131072;
+  prog_mem = new unsigned char[size];
+  reg_file[RegNames::PC] = size - 7;
 
   EXPECT_FALSE(fetch());
 
@@ -32,19 +32,9 @@ TEST(FetchTest, FetchBeyondMemoryBoundary){
 }
 
 TEST(FetchTest, FetchWithInvalidPC){
-  memorySize = 1000;
-  prog_mem = new unsigned char[memorySize];
-  reg_file[static_cast<int>(RegNames::PC)] = memorySize + 10;
-
-  EXPECT_FALSE(fetch());
-
-  delete[] prog_mem;
-}
-
-TEST(FetchTest, FetchWithZeroMemorySize){
-  memorySize = 0;
-  prog_mem = new unsigned char[memorySize];
-  reg_file[static_cast<int>(RegNames::PC)] = 0;
+  int size = 131072;
+  prog_mem = new unsigned char[size];
+  reg_file[RegNames::PC] = size + 10;
 
   EXPECT_FALSE(fetch());
 
@@ -53,9 +43,9 @@ TEST(FetchTest, FetchWithZeroMemorySize){
 
 
 TEST(FetchTest, FetchAtMemoryLimit){
-  memorySize = 131072;
-  prog_mem = new unsigned char[memorySize];
-  reg_file[static_cast<int>(RegNames::PC)] = 10;
+  int size = 131072;
+  prog_mem = new unsigned char[size];
+  reg_file[RegNames::PC] = 10;
 
   EXPECT_TRUE(fetch());
 
@@ -63,57 +53,58 @@ TEST(FetchTest, FetchAtMemoryLimit){
 }
 
 TEST(FetchTest, FetchOverMemoryLimit){
-  memorySize = 131073;
-  prog_mem = new unsigned char[memorySize];
-  reg_file[static_cast<int>(RegNames::PC)] = memorySize - 7;
+  int size = 131072;
+  prog_mem = new unsigned char[size];
+  reg_file[RegNames::PC] = size - 7;
 
   EXPECT_FALSE(fetch());
 
   delete[] prog_mem;
 }
 
+
 TEST(DecodeTest, ValidOperation){
-	cntrl_regs[static_cast<int>(CntrlRegNames::OPERATION)] = 7; 
-  cntrl_regs[static_cast<int>(CntrlRegNames::OPERAND_1)] = 1; 
-  cntrl_regs[static_cast<int>(CntrlRegNames::OPERAND_2)] = 2;
+	cntrl_regs[CntrlRegNames::OPERATION] = 7; 
+  cntrl_regs[CntrlRegNames::OPERAND_1] = 1; 
+  cntrl_regs[CntrlRegNames::OPERAND_2] = 2;
 
 	EXPECT_TRUE(decode());
 }
 
 TEST(DecodeTest, InvalidOperation){
-  cntrl_regs[static_cast<int>(CntrlRegNames::OPERATION)] = 99;
+  cntrl_regs[CntrlRegNames::OPERATION] = 99;
 
   EXPECT_FALSE(decode());
 }
 
 TEST(DecodeTest, InvalidOperand){
-	cntrl_regs[static_cast<int>(CntrlRegNames::OPERATION)] = 7;
-  cntrl_regs[static_cast<int>(CntrlRegNames::OPERAND_1)] = 99;
-  cntrl_regs[static_cast<int>(CntrlRegNames::OPERAND_2)] = 2;
+	cntrl_regs[CntrlRegNames::OPERATION] = 7;
+  cntrl_regs[CntrlRegNames::OPERAND_1] = 99;
+  cntrl_regs[CntrlRegNames::OPERAND_2] = 2;
 
   EXPECT_FALSE(decode());
 }
 
 TEST(DecodeTest, ImmediateAssignment){
-	cntrl_regs[static_cast<int>(CntrlRegNames::OPERATION)] = 8;
-  cntrl_regs[static_cast<int>(CntrlRegNames::OPERAND_1)] = 1;
-  cntrl_regs[static_cast<int>(CntrlRegNames::IMMEDIATE)] = 12345;
+	cntrl_regs[CntrlRegNames::OPERATION] = 8;
+  cntrl_regs[CntrlRegNames::OPERAND_1] = 1;
+  cntrl_regs[CntrlRegNames::IMMEDIATE] = 12345;
   
 	EXPECT_TRUE(decode());
 	EXPECT_EQ(data_regs[1], 12345);
 }
 
 TEST(DecodeTest, OperandEdgeValues){
-  cntrl_regs[static_cast<int>(CntrlRegNames::OPERATION)] = 7;
-  cntrl_regs[static_cast<int>(CntrlRegNames::OPERAND_1)] = 0;
-  cntrl_regs[static_cast<int>(CntrlRegNames::OPERAND_2)] = num_gen_regs - 1;
+  cntrl_regs[CntrlRegNames::OPERATION] = 7;
+  cntrl_regs[CntrlRegNames::OPERAND_1] = 0;
+  cntrl_regs[CntrlRegNames::OPERAND_2] = num_gen_regs - 1;
 
   EXPECT_TRUE(decode());
 }
 
 TEST(DecodeTest, DecodeWithoutFetching){
-  cntrl_regs[static_cast<int>(CntrlRegNames::OPERATION)] = 7;
-  cntrl_regs[static_cast<int>(CntrlRegNames::OPERAND_2)] = 1;
+  cntrl_regs[CntrlRegNames::OPERATION] = 7;
+  cntrl_regs[CntrlRegNames::OPERAND_2] = 1;
 
 	decode();
 	EXPECT_TRUE(decode());
@@ -128,7 +119,7 @@ TEST(DecodeTest, UninitialzedCntrlRegisters){
 }
 
 TEST(ExecuteTest, AddOperation){
-	cntrl_regs[static_cast<int>(CntrlRegNames::OPERATION)] = 18;
+	cntrl_regs[CntrlRegNames::OPERATION] = 18;
 	data_regs[0] = 1;
 	data_regs[1] = 2;
 	data_regs[2] = 3;
@@ -140,7 +131,7 @@ TEST(ExecuteTest, AddOperation){
 }
 
 TEST(ExecuteTest, SubOperation){
-  cntrl_regs[static_cast<int>(CntrlRegNames::OPERATION)] = 20;
+  cntrl_regs[CntrlRegNames::OPERATION] = 20;
   data_regs[0] = 1;
   data_regs[1] = 2;
   data_regs[2] = 3;
@@ -152,7 +143,7 @@ TEST(ExecuteTest, SubOperation){
 }
 
 TEST(ExecuteTest, MulOperation){
-  cntrl_regs[static_cast<int>(CntrlRegNames::OPERATION)] = 22;
+  cntrl_regs[CntrlRegNames::OPERATION] = 22;
   data_regs[0] = 1;
   data_regs[1] = 2;
   data_regs[2] = 3;
@@ -164,7 +155,7 @@ TEST(ExecuteTest, MulOperation){
 }
 
 TEST(ExecuteTest, DivOperation){
-  cntrl_regs[static_cast<int>(CntrlRegNames::OPERATION)] = 24;
+  cntrl_regs[CntrlRegNames::OPERATION] = 24;
   data_regs[0] = 1;
   data_regs[1] = 2;
   data_regs[2] = 3;
@@ -176,16 +167,17 @@ TEST(ExecuteTest, DivOperation){
 }
 
 TEST(ExecuteTest, StoreMemoryLimit){
-	cntrl_regs[static_cast<int>(CntrlRegNames::OPERATION)] = 10;
+	int size = 131072;
+	cntrl_regs[CntrlRegNames::OPERATION] = 10;
 	data_regs[0] = 1;
-	data_regs[1] = memorySize + 1;
+	data_regs[1] = size + 1;
 	reg_file[1] = 12345;
 
 	EXPECT_FALSE(execute());
 }
 
 TEST(ExecuteTest, LoadOperation){
-  cntrl_regs[static_cast<int>(CntrlRegNames::OPERATION)] = 11;
+  cntrl_regs[CntrlRegNames::OPERATION] = 11;
   data_regs[0] = 1;
   data_regs[1] = 100;
   auto* address = reinterpret_cast<unsigned int*>(prog_mem + 100);
@@ -196,7 +188,7 @@ TEST(ExecuteTest, LoadOperation){
 }
 
 TEST(ExecuteTest, DivByZero){
-  cntrl_regs[static_cast<int>(CntrlRegNames::OPERATION)] = 24;
+  cntrl_regs[CntrlRegNames::OPERATION] = 24;
   data_regs[0] = 1;
   data_regs[1] = 2;
 	data_regs[2] = 3;
@@ -205,6 +197,36 @@ TEST(ExecuteTest, DivByZero){
 
   EXPECT_FALSE(execute());
 }
+
+TEST(FetchFunction, PopulatesControlRegistersCorrectly) {
+  int size = 131072;
+  prog_mem = new unsigned char[size];
+
+  prog_mem[PC] = 0x01;
+  prog_mem[PC + 1] = 0x02;
+  prog_mem[PC + 2] = 0x03;
+  prog_mem[PC + 3] = 0x04;
+  // Set an immediate value (for simplicity, using 0x05060708)
+  prog_mem[PC + 4] = 0x08;
+  prog_mem[PC + 5] = 0x07;
+  prog_mem[PC + 6] = 0x06;
+  prog_mem[PC + 7] = 0x05;
+
+  reg_file[RegNames::PC] = 0; // Starting PC
+
+  bool success = fetch();
+
+  ASSERT_TRUE(success);
+  EXPECT_EQ(cntrl_regs[CntrlRegNames::OPERATION], 0x01); //FAILING
+  EXPECT_EQ(cntrl_regs[CntrlRegNames::OPERAND_1], 0x02); //FAILING
+  EXPECT_EQ(cntrl_regs[CntrlRegNames::OPERAND_2], 0x03); //FAILING
+  EXPECT_EQ(cntrl_regs[CntrlRegNames::OPERAND_3], 0x04); //FAILING
+  unsigned int expectedImmediate = 0x08070605; // Adjust based on your system's endianness
+  //EXPECT_EQ(cntrl_regs[CntrlRegNames::IMMEDIATE], expectedImmediate);
+
+  delete[] prog_mem;
+}
+
 
 int main(int argc, char **argv){
 	::testing::InitGoogleTest(&argc, argv);

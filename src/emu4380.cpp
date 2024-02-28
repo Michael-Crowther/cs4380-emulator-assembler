@@ -9,7 +9,7 @@ using namespace std;
 
 unsigned int reg_file[num_gen_regs];
 unsigned char* prog_mem;
-unsigned int memorySize;
+unsigned int memorySize = 131072;
 unsigned int cntrl_regs[num_cntrl_regs];
 unsigned int data_regs[num_data_regs];
 static const unordered_set<unsigned int> validOperations = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
@@ -19,30 +19,40 @@ bool isValidRegister(unsigned int reg){
 };
 
 bool init_mem(unsigned int size){
-	prog_mem = new unsigned char[size];
+	prog_mem = new (std::nothrow) unsigned char[size];
+	if(!prog_mem){
+		cout << "Failed to allocate memory." << endl;
+		return false;
+	}
 	return true;
 }
 
 bool fetch(){
-	unsigned int PC = reg_file[static_cast<int>(RegNames::PC)];
+	unsigned int PC = reg_file[RegNames::PC];
 	if(PC >= memorySize || PC + 8 > memorySize){
 		return false;
 	}
 
 	//1 byte operation, 3 bytes operands, 4 bytes immediate
-	cntrl_regs[static_cast<int>(CntrlRegNames::OPERATION)] = prog_mem[PC];
-  cntrl_regs[static_cast<int>(CntrlRegNames::OPERAND_1)] = prog_mem[PC + 1];
-  cntrl_regs[static_cast<int>(CntrlRegNames::OPERAND_2)] = prog_mem[PC + 2];
-  cntrl_regs[static_cast<int>(CntrlRegNames::OPERAND_3)] = prog_mem[PC + 3];
+	cntrl_regs[CntrlRegNames::OPERATION] = prog_mem[PC];
+  cntrl_regs[CntrlRegNames::OPERAND_1] = prog_mem[PC + 1];
+  cntrl_regs[CntrlRegNames::OPERAND_2] = prog_mem[PC + 2];
+  cntrl_regs[CntrlRegNames::OPERAND_3] = prog_mem[PC + 3];
 
 	unsigned int immediateValue = 0;
 	for (int i = 0; i < 4; ++i) {
     immediateValue |= static_cast<unsigned int>(prog_mem[PC + 4 + i]) << (i * 8);
 	}
-	cntrl_regs[static_cast<int>(CntrlRegNames::IMMEDIATE)] = immediateValue;
+	cntrl_regs[CntrlRegNames::IMMEDIATE] = immediateValue;
+
+	cout << "After fetch, cntrl_regs[OPERATION]: " << cntrl_regs[CntrlRegNames::OPERATION] << std::endl; //prints 0
+	cout << "cntrl_regs[OPERAND_1]: " << cntrl_regs[CntrlRegNames::OPERAND_1] << std::endl; //prints 0
+	cout << "cntrl_regs[OPERAND_2]: " << cntrl_regs[CntrlRegNames::OPERAND_2] << std::endl; //prints 0
+	cout << "cntrl_regs[OPERAND_3]: " << cntrl_regs[CntrlRegNames::OPERAND_3] << std::endl; // prints 0
+	cout << "cntrl_regs[IMMEDIATE]: " << cntrl_regs[CntrlRegNames::IMMEDIATE] << std::endl;
 
 	//move to next instruction
-	reg_file[static_cast<int>(RegNames::PC)] += 8;
+	reg_file[RegNames::PC] += 8;
 	return true;
 } 
 
