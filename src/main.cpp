@@ -53,16 +53,16 @@ int main(int argc, char** argv){
  	binaryFile.read(reinterpret_cast<char*>(prog_mem), memorySize);
 	binaryFile.close();
 
+/*
 	cout << "Contents of prog_mem: ";
-for (int i = 0; i < 500; ++i) {  // Just an example, adjust the range as needed
+	for (int i = 0; i < 300; ++i) {  // Just an example, adjust the range as needed
     cout << hex << static_cast<int>(prog_mem[i]) << " ";
-}
-cout << endl;
-
+	}
+	cout << endl;
+*/
 
 	//set PC register here
 	reg_file[RegNames::PC] = *reinterpret_cast<unsigned int*>(prog_mem);
-	cout << "PC in main: " << reg_file[RegNames::PC] << endl;
 
 	//execution loop
 	bool running = true;

@@ -2,13 +2,14 @@
 #include <limits>
 #include <fstream>
 #include <iostream>
+#include <cstring>
 #include <unordered_set>
 #include "../include/emu4380.h"
 
 using namespace std;
 
 unsigned int reg_file[num_gen_regs];
-unsigned char* prog_mem;
+unsigned char* prog_mem = nullptr;
 unsigned int memorySize = 131072;
 unsigned int cntrl_regs[num_cntrl_regs];
 unsigned int data_regs[num_data_regs];
@@ -19,12 +20,12 @@ bool isValidRegister(unsigned int reg){
 };
 
 bool init_mem(unsigned int size){
-	prog_mem = new (std::nothrow) unsigned char[size];
-	if(!prog_mem){
-		cout << "Failed to allocate memory." << endl;
-		return false;
+	prog_mem = new unsigned char[size];
+	if(prog_mem){
+		std::memset(prog_mem, 0, size);
+		return true;
 	}
-	return true;
+	return false;
 }
 
 bool fetch(){
@@ -45,12 +46,6 @@ bool fetch(){
 	}
 	cntrl_regs[CntrlRegNames::IMMEDIATE] = immediateValue;
 
-	cout << "After fetch, cntrl_regs[OPERATION]: " << cntrl_regs[CntrlRegNames::OPERATION] << std::endl; //prints 0
-	cout << "cntrl_regs[OPERAND_1]: " << cntrl_regs[CntrlRegNames::OPERAND_1] << std::endl; //prints 0
-	cout << "cntrl_regs[OPERAND_2]: " << cntrl_regs[CntrlRegNames::OPERAND_2] << std::endl; //prints 0
-	cout << "cntrl_regs[OPERAND_3]: " << cntrl_regs[CntrlRegNames::OPERAND_3] << std::endl; // prints 0
-	cout << "cntrl_regs[IMMEDIATE]: " << cntrl_regs[CntrlRegNames::IMMEDIATE] << std::endl;
-
 	//move to next instruction
 	reg_file[RegNames::PC] += 8;
 	return true;
@@ -66,6 +61,7 @@ bool decode(){
 
 	//check validity of operation
 	if(validOperations.find(operation) == validOperations.end()){
+		cout << "operation failing: " << operation << endl;
 		return false;
 	}
 
