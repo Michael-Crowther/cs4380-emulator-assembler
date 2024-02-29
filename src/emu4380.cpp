@@ -58,11 +58,11 @@ bool fetch(){
 
 
 bool decode(){
-	unsigned int operation = cntrl_regs[static_cast<int>(CntrlRegNames::OPERATION)];
-  unsigned int operand1 = cntrl_regs[static_cast<int>(CntrlRegNames::OPERAND_1)];
-  unsigned int operand2 = cntrl_regs[static_cast<int>(CntrlRegNames::OPERAND_2)];
-  unsigned int operand3 = cntrl_regs[static_cast<int>(CntrlRegNames::OPERAND_3)];
-  unsigned int immediate = cntrl_regs[static_cast<int>(CntrlRegNames::IMMEDIATE)];
+	unsigned int operation = cntrl_regs[CntrlRegNames::OPERATION];
+  unsigned int operand1 = cntrl_regs[CntrlRegNames::OPERAND_1];
+  unsigned int operand2 = cntrl_regs[CntrlRegNames::OPERAND_2];
+  unsigned int operand3 = cntrl_regs[CntrlRegNames::OPERAND_3];
+  unsigned int immediate = cntrl_regs[CntrlRegNames::IMMEDIATE];
 
 	//check validity of operation
 	if(validOperations.find(operation) == validOperations.end()){
@@ -124,11 +124,11 @@ bool decode(){
 
 
 bool execute(){
-	unsigned int operation = cntrl_regs[static_cast<int>(CntrlRegNames::OPERATION)];
+	unsigned int operation = cntrl_regs[CntrlRegNames::OPERATION];
 
 	switch(operation){
 		case 1: //JMP
-			reg_file[static_cast<int>(RegNames::PC)] = data_regs[0];
+			reg_file[RegNames::PC] = data_regs[0];
 			break;
 		case 7: //MOV
 			reg_file[data_regs[0]] = reg_file[data_regs[1]];

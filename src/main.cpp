@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <limits>
 #include <fstream>
+#include <iomanip>
 #include "../include/emu4380.h"
 
 using namespace std;
@@ -28,7 +29,6 @@ int main(int argc, char** argv){
 	//allocate program memory
   init_mem(memorySize);
 
-	//Need a way to confirm prog_mem was populated here
 
   //open binary file
   ifstream binaryFile(bytecodeFile, ios::binary);
@@ -51,9 +51,18 @@ int main(int argc, char** argv){
 
   //read file into program memory
  	binaryFile.read(reinterpret_cast<char*>(prog_mem), memorySize);
+	binaryFile.close();
+
+	cout << "Contents of prog_mem: ";
+for (int i = 0; i < 500; ++i) {  // Just an example, adjust the range as needed
+    cout << hex << static_cast<int>(prog_mem[i]) << " ";
+}
+cout << endl;
+
 
 	//set PC register here
 	reg_file[RegNames::PC] = *reinterpret_cast<unsigned int*>(prog_mem);
+	cout << "PC in main: " << reg_file[RegNames::PC] << endl;
 
 	//execution loop
 	bool running = true;
