@@ -1,2 +1,11 @@
 build
 encoder
+src/CMakeCache.txt
+src/Encoder
+src/_deps
+src/cmake_install.cmake
+src/runTests
+src/CMakeFiles
+src/Makefile
+src/emu4380
+src/lib
