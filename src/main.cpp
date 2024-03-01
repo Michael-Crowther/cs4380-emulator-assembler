@@ -67,10 +67,21 @@ int main(int argc, char** argv){
 	//execution loop
 	bool running = true;
 	while(running){
+		/*
 		if(!fetch() || !decode() || !execute()){
 			cout << "INVALID INSTRUCTION AT: " << reg_file[RegNames::PC] << endl;
 			return 1;
 		}
+		*/
+		if(!fetch()){
+			cout << "INVALID INSTRUCTION AT: " << reg_file[RegNames::PC] << " IN FETCH" << endl;
+		}
+		if(!decode()){
+      cout << "INVALID INSTRUCTION AT: " << reg_file[RegNames::PC] << " IN DECODE" << endl;
+    }
+		if(!execute()){
+      cout << "INVALID INSTRUCTION AT: " << reg_file[RegNames::PC] << " IN EXECUTE" << endl;
+    }
 	}
 
   delete[] prog_mem;

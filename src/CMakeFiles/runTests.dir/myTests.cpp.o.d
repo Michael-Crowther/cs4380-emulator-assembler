@@ -258,4 +258,5 @@ CMakeFiles/runTests.dir/myTests.cpp.o: \
  /mnt/c/Users/Michael\ Crowther/Downloads/cs4380-emulator-assembler/src/_deps/googletest-src/googletest/include/gtest/gtest-typed-test.h \
  /mnt/c/Users/Michael\ Crowther/Downloads/cs4380-emulator-assembler/src/_deps/googletest-src/googletest/include/gtest/gtest_pred_impl.h \
  /mnt/c/Users/Michael\ Crowther/Downloads/cs4380-emulator-assembler/src/_deps/googletest-src/googletest/include/gtest/gtest_prod.h \
+ /usr/include/c++/11/cstring \
  /mnt/c/Users/Michael\ Crowther/Downloads/cs4380-emulator-assembler/src/../include/emu4380.h

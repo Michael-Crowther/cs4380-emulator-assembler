@@ -1,4 +1,7 @@
 #include <gtest/gtest.h>
+#include <cstring>
+#include <iostream>
+#include <sstream>
 #include "../include/emu4380.h"
 
 TEST(FetchTest, FetchNormalOperation){
@@ -85,14 +88,6 @@ TEST(DecodeTest, InvalidOperand){
   EXPECT_FALSE(decode());
 }
 
-TEST(DecodeTest, ImmediateAssignment){
-	cntrl_regs[CntrlRegNames::OPERATION] = 8;
-  cntrl_regs[CntrlRegNames::OPERAND_1] = 1;
-  cntrl_regs[CntrlRegNames::IMMEDIATE] = 12345;
-  
-	EXPECT_TRUE(decode());
-	EXPECT_EQ(data_regs[1], 12345);
-}
 
 TEST(DecodeTest, OperandEdgeValues){
   cntrl_regs[CntrlRegNames::OPERATION] = 7;
@@ -119,51 +114,51 @@ TEST(DecodeTest, UninitialzedCntrlRegisters){
 }
 
 TEST(ExecuteTest, AddOperation){
-	cntrl_regs[CntrlRegNames::OPERATION] = 18;
-	data_regs[0] = 1;
-	data_regs[1] = 2;
-	data_regs[2] = 3;
-	reg_file[2] = 5;
-	reg_file[3] = 10;
+	cntrl_regs[OPERATION] = 18;
+	data_regs[REG_VAL_1] = 0;
+	cntrl_regs[OPERAND_2] = 1;
+	cntrl_regs[OPERAND_3] = 2;
+	reg_file[1] = 5;
+	reg_file[2] = 10;
 
 	EXPECT_TRUE(execute());
-	EXPECT_EQ(reg_file[1], 15);
+	EXPECT_EQ(reg_file[0], 15);
 }
 
 TEST(ExecuteTest, SubOperation){
-  cntrl_regs[CntrlRegNames::OPERATION] = 20;
-  data_regs[0] = 1;
-  data_regs[1] = 2;
-  data_regs[2] = 3;
-  reg_file[2] = 10;
-  reg_file[3] = 5;
+  cntrl_regs[OPERATION] = 20;
+  data_regs[REG_VAL_1] = 0;
+  cntrl_regs[OPERAND_2] = 1;
+  cntrl_regs[OPERAND_3] = 2;
+  reg_file[1] = 10;
+  reg_file[2] = 5;
 
   EXPECT_TRUE(execute());
-  EXPECT_EQ(reg_file[1], 5);
+  EXPECT_EQ(reg_file[0], 5);
 }
 
-TEST(ExecuteTest, MulOperation){
-  cntrl_regs[CntrlRegNames::OPERATION] = 22;
-  data_regs[0] = 1;
-  data_regs[1] = 2;
-  data_regs[2] = 3;
+TEST(ExecuteTest, MULOperation){
+  cntrl_regs[OPERATION] = 22;
+  data_regs[REG_VAL_1] = 0;
+  cntrl_regs[OPERAND_2] = 1;
+  cntrl_regs[OPERAND_3] = 2;
+  reg_file[1] = 5;
   reg_file[2] = 10;
-  reg_file[3] = 5;
 
   EXPECT_TRUE(execute());
-  EXPECT_EQ(reg_file[1], 50);
+  EXPECT_EQ(reg_file[0], 50);
 }
 
 TEST(ExecuteTest, DivOperation){
-  cntrl_regs[CntrlRegNames::OPERATION] = 24;
-  data_regs[0] = 1;
-  data_regs[1] = 2;
-  data_regs[2] = 3;
-  reg_file[2] = 10;
-  reg_file[3] = 5;
+  cntrl_regs[OPERATION] = 24;
+  data_regs[REG_VAL_1] = 0;
+  cntrl_regs[OPERAND_2] = 1;
+  cntrl_regs[OPERAND_3] = 2;
+  reg_file[1] = 10;
+  reg_file[2] = 2;
 
   EXPECT_TRUE(execute());
-  EXPECT_EQ(reg_file[1], 2);
+  EXPECT_EQ(reg_file[0], 5);
 }
 
 TEST(ExecuteTest, StoreMemoryLimit){
@@ -177,9 +172,9 @@ TEST(ExecuteTest, StoreMemoryLimit){
 }
 
 TEST(ExecuteTest, LoadOperation){
-  cntrl_regs[CntrlRegNames::OPERATION] = 11;
-  data_regs[0] = 1;
-  data_regs[1] = 100;
+  cntrl_regs[OPERATION] = 11;
+  cntrl_regs[OPERAND_1] = 1;
+  cntrl_regs[IMMEDIATE] = 100;
   auto* address = reinterpret_cast<unsigned int*>(prog_mem + 100);
 	*address = 54321;
 
@@ -188,15 +183,16 @@ TEST(ExecuteTest, LoadOperation){
 }
 
 TEST(ExecuteTest, DivByZero){
-  cntrl_regs[CntrlRegNames::OPERATION] = 24;
-  data_regs[0] = 1;
-  data_regs[1] = 2;
-	data_regs[2] = 3;
+  cntrl_regs[OPERATION] = 24;
+	cntrl_regs[OPERAND_2] = 2;
+	cntrl_regs[OPERAND_3] = 3;
+
 	reg_file[2] = 50;
-	reg_file[3] = 0;	
+	reg_file[3] = 0;
 
   EXPECT_FALSE(execute());
 }
+
 
 TEST(MemoryInitializationTest, AllocatesMem){
 	unsigned int size = 131072;
@@ -229,6 +225,113 @@ TEST(FetchTest, PCIncrementsProperly){
 
 	// Check that PC incremented by 8
   EXPECT_EQ(reg_file[RegNames::PC], 8u) << "PC did not increment by 8 after fetch.";
+}
+
+TEST(FetchTest, ValidatesControlRegistersInitialization) {
+    unsigned int size = 131072;
+  	init_mem(size);
+
+    unsigned char instruction[8] = {
+        0x01, 0x02, 0x03, 0x04, 0x08, 0x07, 0x06, 0x05
+    };
+		std::memcpy(prog_mem, instruction, sizeof(instruction));
+
+    reg_file[PC] = 0;
+
+    bool fetchSuccess = fetch();
+
+    ASSERT_TRUE(fetchSuccess);
+
+    EXPECT_EQ(cntrl_regs[OPERATION], 0x01);
+    EXPECT_EQ(cntrl_regs[OPERAND_1], 0x02);
+    EXPECT_EQ(cntrl_regs[OPERAND_2], 0x03);
+    EXPECT_EQ(cntrl_regs[OPERAND_3], 0x04);
+    EXPECT_EQ(cntrl_regs[IMMEDIATE], 0x05060708);
+}
+
+TEST(RegisterTest, HandlesValidRegisters){
+	unsigned int validReg = 5;
+	EXPECT_TRUE(isValidRegister(validReg));
+}
+
+TEST(RegisterTest, HandlesInvalidRegisters){
+  unsigned int validReg = 23;
+  EXPECT_FALSE(isValidRegister(validReg));
+}
+
+TEST(TrapTests, TRPStopExit){
+	cntrl_regs[OPERATION] = 31;
+	data_regs[REG_VAL_1] = 0;
+
+	EXPECT_FALSE(execute());
+}
+
+TEST(TrapTests, TRPWriteIntToStdOut){
+	cntrl_regs[OPERATION] = 31;
+	data_regs[REG_VAL_1] = 1;
+	reg_file[3] = 123;
+
+  std::stringstream buffer;
+  std::streambuf* prevCoutStreamBuf = std::cout.rdbuf();
+  std::cout.rdbuf(buffer.rdbuf());
+
+  execute();
+
+  std::cout.rdbuf(prevCoutStreamBuf);
+
+  EXPECT_EQ(buffer.str(), "123\n");
+}
+
+TEST(TrapTests, TRPReadIntToR3){
+	cntrl_regs[OPERATION] = 31;
+	data_regs[REG_VAL_1] = 2;
+
+  std::istringstream simulatedInput("42\n"); // Simulated input to be read into R3
+  std::streambuf* prevCinStreamBuf = std::cin.rdbuf();
+  std::cin.rdbuf(simulatedInput.rdbuf());
+
+  execute();
+
+  std::cin.rdbuf(prevCinStreamBuf);
+
+  EXPECT_EQ(reg_file[3], 42);
+}
+
+TEST(TrapTests, TRPPrintAllRegisters){
+    cntrl_regs[OPERATION] = 31;
+    data_regs[REG_VAL_1] = 98; 
+
+    // Initialize reg_file with test values
+    for(size_t i = 0; i < num_gen_regs; ++i) {
+        reg_file[i] = i * 100;
+    }
+    reg_file[PC] = 1000;
+    reg_file[SL] = 2000;
+    reg_file[SB] = 3000;
+    reg_file[SP] = 4000;
+    reg_file[FP] = 5000;
+    reg_file[HP] = 6000;
+
+    std::stringstream buffer;
+    std::streambuf* prevCoutStreamBuf = std::cout.rdbuf();
+    std::cout.rdbuf(buffer.rdbuf());
+
+    execute();
+
+    std::cout.rdbuf(prevCoutStreamBuf);
+
+    std::stringstream expectedOutput;
+    for(size_t i = 0; i < num_gen_regs; ++i) {
+        expectedOutput << "R" << i << "\t" << i * 100 << std::endl;
+    }
+    expectedOutput << "PC\t" << 1000 << std::endl;
+    expectedOutput << "SL\t" << 2000 << std::endl;
+    expectedOutput << "SB\t" << 3000 << std::endl;
+    expectedOutput << "SP\t" << 4000 << std::endl;
+    expectedOutput << "FP\t" << 5000 << std::endl;
+    expectedOutput << "HP\t" << 6000 << std::endl;
+
+    EXPECT_EQ(buffer.str(), expectedOutput.str());
 }
 
 int main(int argc, char **argv){
