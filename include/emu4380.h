@@ -32,4 +32,6 @@ bool execute();
 
 bool init_mem(unsigned int size);
 
+bool isValidRegister(unsigned int reg);
+
 #endif

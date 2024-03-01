@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <limits>
 #include <fstream>
+#include <iomanip>
 #include "../include/emu4380.h"
 
 using namespace std;
@@ -28,8 +29,6 @@ int main(int argc, char** argv){
 	//allocate program memory
   init_mem(memorySize);
 
-	//Need a way to confirm prog_mem was populated here
-
   //open binary file
   ifstream binaryFile(bytecodeFile, ios::binary);
   if(!binaryFile){
@@ -51,6 +50,7 @@ int main(int argc, char** argv){
 
   //read file into program memory
  	binaryFile.read(reinterpret_cast<char*>(prog_mem), memorySize);
+	binaryFile.close();
 
 	//set PC register here
 	reg_file[RegNames::PC] = *reinterpret_cast<unsigned int*>(prog_mem);
