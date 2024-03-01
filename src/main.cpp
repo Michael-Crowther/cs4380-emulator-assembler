@@ -29,7 +29,6 @@ int main(int argc, char** argv){
 	//allocate program memory
   init_mem(memorySize);
 
-
   //open binary file
   ifstream binaryFile(bytecodeFile, ios::binary);
   if(!binaryFile){

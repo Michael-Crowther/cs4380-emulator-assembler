@@ -20,35 +20,35 @@ bool isValidRegister(unsigned int reg){
 };
 
 bool init_mem(unsigned int size){
-	prog_mem = new unsigned char[size];
-	if(prog_mem){
-		std::memset(prog_mem, 0, size);
-		return true;
-	}
-	return false;
+  prog_mem = new unsigned char[size];
+  if(prog_mem){
+    std::memset(prog_mem, 0, size);
+    return true;
+  }
+  return false;
 }
 
 bool fetch(){
-	if(reg_file[PC] >= memorySize || reg_file[PC] + 8 > memorySize){
-		return false;
-	}
+  if(reg_file[PC] >= memorySize || reg_file[PC] + 8 > memorySize){
+    return false;
+  }
 
-	//1 byte operation, 3 bytes operands, 4 bytes immediate
-	cntrl_regs[OPERATION] = prog_mem[reg_file[PC]];
+  //1 byte operation, 3 bytes operands, 4 bytes immediate
+  cntrl_regs[OPERATION] = prog_mem[reg_file[PC]];
   cntrl_regs[OPERAND_1] = prog_mem[reg_file[PC] + 1];
   cntrl_regs[OPERAND_2] = prog_mem[reg_file[PC] + 2];
   cntrl_regs[OPERAND_3] = prog_mem[reg_file[PC] + 3];
 
-	cntrl_regs[CntrlRegNames::IMMEDIATE] =
-      prog_mem[reg_file[PC] + 4] | 
-			(prog_mem[reg_file[PC] + 5] << 8) | 
-			(prog_mem[reg_file[PC] + 6] << 16) | 
-			(prog_mem[reg_file[PC] + 7] << 24);	
+  cntrl_regs[CntrlRegNames::IMMEDIATE] =
+      prog_mem[reg_file[PC] + 4] |
+      (prog_mem[reg_file[PC] + 5] << 8) |
+      (prog_mem[reg_file[PC] + 6] << 16) |
+      (prog_mem[reg_file[PC] + 7] << 24);
 
-	//move to next instruction
-	reg_file[RegNames::PC] += 8;
-	return true;
-} 
+  //move to next instruction
+  reg_file[RegNames::PC] += 8;
+  return true;
+}
 
 
 bool decode(){
