@@ -53,35 +53,16 @@ int main(int argc, char** argv){
  	binaryFile.read(reinterpret_cast<char*>(prog_mem), memorySize);
 	binaryFile.close();
 
-/*
-	cout << "Contents of prog_mem: ";
-	for (int i = 0; i < 300; ++i) {  // Just an example, adjust the range as needed
-    cout << hex << static_cast<int>(prog_mem[i]) << " ";
-	}
-	cout << endl;
-*/
-
 	//set PC register here
 	reg_file[RegNames::PC] = *reinterpret_cast<unsigned int*>(prog_mem);
 
 	//execution loop
 	bool running = true;
 	while(running){
-		/*
 		if(!fetch() || !decode() || !execute()){
 			cout << "INVALID INSTRUCTION AT: " << reg_file[RegNames::PC] << endl;
 			return 1;
 		}
-		*/
-		if(!fetch()){
-			cout << "INVALID INSTRUCTION AT: " << reg_file[RegNames::PC] << " IN FETCH" << endl;
-		}
-		if(!decode()){
-      cout << "INVALID INSTRUCTION AT: " << reg_file[RegNames::PC] << " IN DECODE" << endl;
-    }
-		if(!execute()){
-      cout << "INVALID INSTRUCTION AT: " << reg_file[RegNames::PC] << " IN EXECUTE" << endl;
-    }
 	}
 
   delete[] prog_mem;
