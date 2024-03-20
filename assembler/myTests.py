@@ -24,7 +24,7 @@ def run_assembler(input_asm_file):
 		("invalidDataSection.asm", 2),
 		("invalidMain.asm", 2),
 		("duplicateFunction.asm", 2),
-		("missingLabel.asm", 2)
+		("missingLabel.asm", 2),
 ])
 
 def test_assembler_errors(input_asm, expected_exit_code):
@@ -37,7 +37,18 @@ def test_assembler_errors(input_asm, expected_exit_code):
 		"valid1.asm",
 		"valid2.asm",   
 		"validArrayInit.asm",
-		"simple.asm"
+		"simple.asm",
+		"simple2.asm",
+		"simple2Comments.asm",
+		"validDirective.asm",
+		"validDirective2.asm",
+		"arithmetic.asm",
+		"arithmetic2.asm",
+		"movInstructions.asm",
+		"movInstructions2.asm",
+		"movInstructions3.asm",
+		"trpInstructions.asm",
+		"allInstructions.asm"
 ])
 
 # Test case for the valid input file

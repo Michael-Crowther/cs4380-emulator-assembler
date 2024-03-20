@@ -49,6 +49,8 @@ def parse_line(line, line_num, unresolved_labels):
 	#start parsing line parts
 	parts = code.split(maxsplit=1)
 
+	#print(f"parsed line parts: {parts}")
+
 	if len(parts) > 1 and parts[1].startswith('.'):
 		#label then directive
 		label = parts[0] if not parts[0].startswith('.') else None
@@ -56,10 +58,9 @@ def parse_line(line, line_num, unresolved_labels):
 		operand = ' '.join(parts[2:]) if len(parts) > 2 else None
 		return ('directive', label, f"{directive} {operand}" if operand else directive), unresolved_labels
 
-	elif parts[0].endswith(':'):
-		label = parts[0][:-1]
-		if label and label.lower() in unresolved_labels:
-			unresolved_labels.remove(label)
+	elif parts[0].lower() in unresolved_labels:
+		label = parts[0].lower()
+		unresolved_labels.remove(label)
 		#check if there is more after label
 		if len(parts) > 1:
 			#split further to identify instruction/directive
@@ -132,6 +133,9 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 	}
 
 	#print(f"got to process instruction")
+	#print(f"instruction: {instruction}")
+	#print(f"parts: {parts}")
+	#print(f"{unresolved_labels}")
 
 	#check for invalid operator
 	if operator not in opcode_map:
@@ -142,6 +146,8 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 	
 	#process operands from instruction type
 	if operator in ['jmp', 'lda', 'str', 'ldr', 'stb', 'ldb']:
+		#print(f"operator: {operator}")
+		#print(f"operands: {operands}")
 		for operand in operands:
 			#print(f"operand: {operand}")
 			if operand.startswith("'"):
@@ -161,9 +167,10 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 				#resolve address of label
 				address = symbol_table.get(operand.strip(), 0)
 				instruction_bytes.extend(address.to_bytes(4, byteorder='little', signed=False))
+				#print(f"adding to unresovled labels: {operand.strip()}")
 				unresolved_labels.add(operand.strip())
 
-	elif operator in ['mov', 'add', 'sub', 'mul', 'div']:
+	elif operator in ['mov', 'add', 'sub', 'mul', 'div', 'sdiv']:
 		for operand in operands:
 			operand = operand.strip()
 			if operand.startswith("'"):
@@ -184,7 +191,7 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 			else:
 				unresolved_labels.add(operand.strip())
 
-	elif operator in ['movi', 'addi', 'subi', 'muli', 'sdiv', 'divi']:
+	elif operator in ['movi', 'addi', 'subi', 'muli', 'divi']:
 		reg_operand = operands[0].lower()
 		if reg_operand.startswith("'"):
 			instruction_bytes = char_to_ascii(operand, instruction_bytes)
@@ -200,7 +207,7 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 			unresolved_labels.add(operand.strip())
 
 		#process immediate value
-		imm_value_operand = operands[1].strip()
+		imm_value_operand = operands[-1].strip()
 		if imm_value_operand.startswith('#'):
 			imm_value_operand = imm_value_operand[1:]
 		if imm_value_operand.isdigit() or (imm_value_operand.startswith('-') and imm_value_operand[1:].isdigit()):
@@ -251,6 +258,9 @@ def assemble(filename):
 
 		parsed_line, unresolved_labels = parse_line(line, line_num, unresolved_labels)
 
+		#print(f"{parsed_line}")
+		#print(f"{unresolved_labels}")
+
 		if not parsed_line:
 			continue #skip empty lines and comments
 
@@ -288,7 +298,7 @@ def assemble(filename):
 					print(f"Assembler error encountered on line {line_num}!")
 					sys.exit(2)
 			bytecode, unresolved_labels = process_instruction(parsed_line, line_num, symbol_table, bytecode, unresolved_labels)
-			#print("processed instruction")
+			#print(f"processed instruction on line {line_num}")
 			pass
 		elif line_type == 'label':
 			pass
@@ -300,6 +310,7 @@ def assemble(filename):
 	unresolved_labels -= variables
 	#throw error if any label called in an operand is not a valid function name
 	if len(unresolved_labels) > 0:
+		#print(f"{unresolved_labels}")
 		print(f"Assembler error encountered on line {line_num}!")
 		sys.exit(2)
 
