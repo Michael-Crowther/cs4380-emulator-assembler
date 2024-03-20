@@ -8,7 +8,7 @@ CHAR2 .BYT 'A'              ; CANT HAVE TWO DIRECTIVES ON ONE LINE
         JMP MAIN          ; Jump to start of the program
 
 ; Main program execution starts
-MAIN:   MOV R1, '\r'         ; Clear R1 to start with 0
+MAIN    MOV R1, '\r'         ; Clear R1 to start with 0
         MOV R2, CHAR1        ; ERROR HERE
         ADD R1, R1, R2     ; Add NUM to R1, result in R1
 

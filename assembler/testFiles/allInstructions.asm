@@ -1,0 +1,34 @@
+NUMBER .int #34
+BYTE .BYT 'a'
+
+JMP MAIN
+
+MAIN MOV R1, R2
+     MOVI R3, #100
+     LDA R4, NUMBER
+     STR R3, NUMBER
+     LDR R5, NUMBER
+     STB R3, BYTE
+     LDB R6, BYTE
+
+; Arithmetic Operations
+ADD R7, R1, R2
+ADDI R8, R1, #10
+SUB R9, R1, R2
+SUBI R10, R1, #10
+MUL R11, R1, R2
+MULI R12, R1, #2
+DIV R13, R1, R2
+SDIV R14, R1, R2
+DIVI R15, R1, #2
+
+; Traps/Interrupts
+TRP #1
+TRP #2
+TRP #3
+TRP #4
+TRP #98
+
+; End of Program
+TRP #0
+

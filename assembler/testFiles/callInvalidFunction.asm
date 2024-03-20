@@ -1,5 +1,5 @@
 JMP MAIN
-MAIN:  MOV R3, #72
+MAIN    MOV R3, #72
         TRP #3
         MOV R3, #101      ; 'e'
         TRP #3

@@ -2,8 +2,7 @@ Everything	.INT	#42 		;constant int
 H		.BYT	'h' 		;character
 I		.BYT	'I' 		;character
 	jmp 	MAIN
-MAIN:
-	ldr 	r0, Everything 		;42 into r0
+MAIN ldr 	r0, Everything 		;42 into r0
 	movi 	r1, #0 			;0 into r1 
 	sub 	r2, r0, r1 		;42 - 0
 	ldr 	r3, Everything 		;42 into r3
