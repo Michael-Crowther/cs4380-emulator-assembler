@@ -18,6 +18,13 @@ enum DataRegNames{
 	REG_VAL_1, REG_VAL_2
 };
 
+extern unsigned int reg_file[num_gen_regs];
+extern unsigned char* prog_mem;
+extern unsigned int cntrl_regs[num_cntrl_regs];
+extern unsigned int data_regs[num_data_regs];
+extern unsigned int memorySize;
+extern unsigned int mem_cycle_cntr;
+
 //Cache base class
 class Cache {
   public:
@@ -35,10 +42,10 @@ class NoCache : public Cache {
     unsigned int readWord(unsigned int address) override;
     void writeByte(unsigned int address, unsigned char byte) override;
     void writeWord(unsigned int address, unsigned int word) override;
-    void init(unsigned int cacheType) override;
+   void init(unsigned int cacheType) override;
 };
 
-/*
+
 class DirectMappedCache : public Cache {
   public:
     unsigned char readByte(unsigned int address) override;
@@ -56,14 +63,8 @@ class FullyAssociativeCache : public Cache {
     void writeWord(unsigned int address, unsigned int word) override;
     void init(unsigned int cacheType) override;
 };
-*/
 
-extern unsigned int reg_file[num_gen_regs];
-extern unsigned char* prog_mem;
-extern unsigned int cntrl_regs[num_cntrl_regs];
-extern unsigned int data_regs[num_data_regs];
-extern unsigned int memorySize;
-extern unsigned int mem_cycle_cntr;
+
 extern Cache* globalCache;
 
 bool fetch();

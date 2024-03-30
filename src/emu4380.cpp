@@ -1,5 +1,6 @@
 #include <string>
 #include <limits>
+#include<iomanip>
 #include <fstream>
 #include <iostream>
 #include <cstring>
@@ -19,15 +20,16 @@ Cache* globalCache = nullptr;
 
 void init_cache(unsigned int cacheType){
   delete globalCache; //cleanup existing cache if any
+
   switch(cacheType){
     case 0:
       globalCache = new NoCache();
       break;
     case 1:
-      //globalCache = new DirectMappedCache();
+      globalCache = new DirectMappedCache();
       break;
     case 2:
-      //globalCache = new FullyAssociativeCache();
+      globalCache = new FullyAssociativeCache();
       break;
     default:
       globalCache = new NoCache();
@@ -55,11 +57,63 @@ void NoCache::writeWord(unsigned int address, unsigned int word){
   mem_cycle_cntr += 8;
   *reinterpret_cast<unsigned int*>(&prog_mem[address]) = word;
 }
-
 void NoCache::init(unsigned int cacheType) {
+	mem_cycle_cntr = 0;
+  return;
+}
+
+//DirectMappedCache methods
+unsigned char DirectMappedCache::readByte(unsigned int address) {
+  //TODO
+  return 'a';
+}
+
+unsigned int DirectMappedCache::readWord(unsigned int address) {
+  //TODO
+  return 0;
+}
+
+void DirectMappedCache::writeByte(unsigned int address, unsigned char byte) {
+  //TODO
+  return;
+}
+
+void DirectMappedCache::writeWord(unsigned int address, unsigned int word){
+  //TODO
+  return;
+}
+void DirectMappedCache::init(unsigned int cacheType) {
   //initialization logic if needed
   return;
 }
+
+
+//FullyAssociativeCache methods
+unsigned char FullyAssociativeCache::readByte(unsigned int address) {
+  //TODO
+  return 'a';
+}
+
+unsigned int FullyAssociativeCache::readWord(unsigned int address) {
+  //TODO
+  return 0;
+}
+
+void FullyAssociativeCache::writeByte(unsigned int address, unsigned char byte) {
+  //TODO
+  return;
+}
+
+void FullyAssociativeCache::writeWord(unsigned int address, unsigned int word){
+  //TODO
+  return;
+}
+void FullyAssociativeCache::init(unsigned int cacheType) {
+  //initialization logic if needed
+  return;
+}
+
+
 
 bool isValidRegister(unsigned int reg){
   return reg < num_gen_regs;
@@ -75,22 +129,23 @@ bool init_mem(unsigned int size){
 }
 
 bool fetch(){
-	cout << "fetch" << endl;
+	//cout << "fetch" << endl;
   if(reg_file[PC] >= memorySize || reg_file[PC] + 8 > memorySize){
     return false;
   }
 
   //1 byte operation, 3 bytes operands, 4 bytes immediate
-  cntrl_regs[OPERATION] = prog_mem[reg_file[PC]];
-  cntrl_regs[OPERAND_1] = prog_mem[reg_file[PC] + 1];
-  cntrl_regs[OPERAND_2] = prog_mem[reg_file[PC] + 2];
-  cntrl_regs[OPERAND_3] = prog_mem[reg_file[PC] + 3];
+  cntrl_regs[OPERATION] = globalCache->readByte(reg_file[PC]);
+  cntrl_regs[OPERAND_1] = globalCache->readByte(reg_file[PC] + 1);
+  cntrl_regs[OPERAND_2] = globalCache->readByte(reg_file[PC] + 2);
+  cntrl_regs[OPERAND_3] = globalCache->readByte(reg_file[PC] + 3);
 
-  cntrl_regs[CntrlRegNames::IMMEDIATE] =
-      prog_mem[reg_file[PC] + 4] |
-      (prog_mem[reg_file[PC] + 5] << 8) |
-      (prog_mem[reg_file[PC] + 6] << 16) |
-      (prog_mem[reg_file[PC] + 7] << 24);
+	unsigned int address = reg_file[static_cast<int>(RegNames::PC)] + 4;
+cntrl_regs[IMMEDIATE] =
+    static_cast<unsigned int>(globalCache->readByte(address)) |
+    (static_cast<unsigned int>(globalCache->readByte(address + 1)) << 8) |
+    (static_cast<unsigned int>(globalCache->readByte(address + 2)) << 16) |
+    (static_cast<unsigned int>(globalCache->readByte(address + 3)) << 24);
 
   //move to next instruction
   reg_file[RegNames::PC] += 8;
@@ -99,7 +154,7 @@ bool fetch(){
 
 
 bool decode(){
-	cout << "decode" << endl;
+	//cout << "decode" << endl;
 	unsigned int operation = cntrl_regs[OPERATION];
   unsigned int operand1 = cntrl_regs[OPERAND_1];
   unsigned int operand2 = cntrl_regs[OPERAND_2];
@@ -148,7 +203,7 @@ bool decode(){
 
 
 bool execute(){
-	cout << "execute" << endl;
+	//cout << "execute" << endl;
 	unsigned int operation = cntrl_regs[OPERATION];
 	unsigned int operand2 = cntrl_regs[OPERAND_2];
 	unsigned int operand3 = cntrl_regs[OPERAND_3];
@@ -169,19 +224,19 @@ bool execute(){
 			break;
 		case 10: //STR
 			if(immediate >= memorySize) return false;
-			*reinterpret_cast<unsigned int*>(prog_mem + immediate) = data_regs[REG_VAL_1]; //store integer in RS at address immediate
+			globalCache->writeWord(immediate, data_regs[REG_VAL_1]);
 			break;
 		case 11: //LDR
 			if(immediate >= memorySize) return false;
-			reg_file[data_regs[REG_VAL_1]] = *reinterpret_cast<unsigned int*>(prog_mem + immediate); //load integer at memory address into RD
+			reg_file[data_regs[REG_VAL_1]] = globalCache->readWord(immediate);
 			break;
 		case 12: //STB
 			if(immediate >= memorySize) return false;
-			prog_mem[immediate] = static_cast<unsigned char>(reg_file[data_regs[REG_VAL_1]] & 0xFF); //store least significant byte in RS at Address
+			globalCache->writeByte(immediate, static_cast<unsigned char>(reg_file[data_regs[REG_VAL_1]] & 0xFF));
 			break;
 		case 13: //LDB
 			if(immediate >= memorySize) return false;
-			reg_file[data_regs[REG_VAL_1]] = prog_mem[immediate]; //load byte at address into RD
+			reg_file[data_regs[REG_VAL_1]] = globalCache->readByte(immediate);
 			break;
 		case 18: //ADD
 			reg_file[data_regs[REG_VAL_1]] = reg_file[operand2] + reg_file[operand3]; //add RS1 to RS2, sotre in RD
@@ -217,10 +272,11 @@ bool execute(){
 			//cout << "trap value: " << data_regs[REG_VAL_1] << endl;
 			switch(data_regs[REG_VAL_1]){
 				case 0: //STOP-Exit
+					delete[] prog_mem;
+					delete globalCache;
 					exit(0);
-					break;
 				case 1: //Write int in R3 to stdout
-					cout << reg_file[data_regs[R3]];
+					cout << reg_file[data_regs[R3]]; //SEG FAULT
 					break;
 				case 2: //Read an integer into R3 from stdin
 					cin >> reg_file[data_regs[R3]];

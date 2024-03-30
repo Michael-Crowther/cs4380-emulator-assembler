@@ -41,7 +41,7 @@ int main(int argc, char** argv){
 
   //allocate program memory
   init_mem(memorySize);
-  init_cache(cacheType);
+	init_cache(cacheType);
 
   //open binary file
   ifstream binaryFile(bytecodeFile, ios::binary);
