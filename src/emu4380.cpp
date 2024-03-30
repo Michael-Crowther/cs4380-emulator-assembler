@@ -208,6 +208,9 @@ bool execute(){
 	unsigned int operand2 = cntrl_regs[OPERAND_2];
 	unsigned int operand3 = cntrl_regs[OPERAND_3];
 	unsigned int immediate = cntrl_regs[IMMEDIATE];
+	cout << "execute" << endl;
+	cout << "operation: " << operation << endl;
+	cout << data_regs[R3] << endl;
 
 	switch(operation){
 		case 1: //JMP
@@ -228,6 +231,7 @@ bool execute(){
 			break;
 		case 11: //LDR
 			if(immediate >= memorySize) return false;
+			cout << data_regs[R3] << endl;
 			reg_file[data_regs[REG_VAL_1]] = globalCache->readWord(immediate);
 			break;
 		case 12: //STB
@@ -276,6 +280,7 @@ bool execute(){
 					delete globalCache;
 					exit(0);
 				case 1: //Write int in R3 to stdout
+					cout << data_regs[R3] << endl;
 					cout << reg_file[data_regs[R3]]; //SEG FAULT
 					break;
 				case 2: //Read an integer into R3 from stdin
