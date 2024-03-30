@@ -79,7 +79,6 @@ int main(int argc, char** argv){
 	}
 
   delete[] prog_mem;
-	cout << "got here" << endl;
 	if(globalCache != nullptr){
 		delete globalCache;
 		globalCache = nullptr;

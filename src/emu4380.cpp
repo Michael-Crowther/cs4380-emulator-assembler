@@ -168,7 +168,18 @@ bool decode(){
 	switch(operation){
 		case 1: //JMP
 			break;
-		case 7: //MOV
+		case 2: //JMR
+		case 3: //BNZ
+		case 4: //BGT
+		case 5: //BLT
+			if (!isValidRegister(operand1)) return false;
+      data_regs[REG_VAL_1] = reg_file[operand1];
+      break;
+		case 7: //MOV	
+		case 14: //ISTR
+		case 15: //ILDR
+		case 16: //ISTB
+		case 17: //ILDB
 			if(!isValidRegister(operand1) || !isValidRegister(operand2)) return false;
 			data_regs[REG_VAL_1] = reg_file[operand1]; //RD
 			data_regs[REG_VAL_2] = reg_file[operand2]; //RS
@@ -188,6 +199,8 @@ bool decode(){
 		case 21: //SUBI
 		case 23: //MULI
 		case 26: //DIVI
+		case 29: //CMP
+		case 30: //CMPI
 			if (!isValidRegister(operand1)) return false;
       data_regs[REG_VAL_1] = reg_file[operand1];
       break;
@@ -212,6 +225,24 @@ bool execute(){
                 case 1: //JMP
                         reg_file[PC] = immediate; //jump to address of immediate
                         break;
+								case 2: //JMR
+												reg_file[PC] = reg_file[operand1];
+												break;
+								case 3: //BNZ
+												if(reg_file[operand1] != 0){
+													reg_file[PC] = immediate;
+												}
+												break;
+								case 4: //BGT
+												if(reg_file[operand1] > 0){
+                          reg_file[PC] = immediate;
+                        }
+                        break;
+								case 5: //BLT
+												if(reg_file[operand1] < 0){
+                          reg_file[PC] = immediate;
+                        }
+                        break;
                 case 7: //MOV
                         reg_file[operand1] = reg_file[operand2]; //move contents of RS to RD
                         break;
@@ -223,20 +254,48 @@ bool execute(){
                         break;
                 case 10: //STR
                         if(immediate >= memorySize) return false;
-                        *reinterpret_cast<unsigned int*>(prog_mem + immediate) = reg_file[operand2]; //store integer in RS at address immediate
+												globalCache->writeWord(immediate, reg_file[operand2]);
                         break;
                 case 11: //LDR
                         if(immediate >= memorySize) return false;
-                        reg_file[operand1] = *reinterpret_cast<unsigned int*>(prog_mem + immediate); //load integer at memory address into RD
+												reg_file[operand1] = globalCache->readWord(immediate);
                         break;
                 case 12: //STB
                         if(immediate >= memorySize) return false;
-                        prog_mem[immediate] = static_cast<unsigned char>(reg_file[operand2] & 0xFF); //store least significant byte in RS at Address
+												globalCache->writeByte(immediate, static_cast<unsigned char>(reg_file[operand2] & 0xFF)); 
                         break;
                 case 13: //LDB
                         if(immediate >= memorySize) return false;
-                        reg_file[operand1] = prog_mem[immediate]; //load byte at address into RD
+												reg_file[operand1] = globalCache->readByte(immediate);
                         break;
+								case 14: // ISTR
+    										{
+        									unsigned int address = reg_file[operand2];
+        									if(address >= memorySize) return false;
+													globalCache->writeWord(address, reg_file[operand1]);
+    										}
+    										break;
+								case 15: // ILDR
+    										{
+        									unsigned int address = reg_file[operand2];
+       	 									if(address >= memorySize) return false;
+													reg_file[operand1] = globalCache->readWord(address);
+    										}
+    										break;
+								case 16: // ISTB
+    										{
+        									unsigned int address = reg_file[operand2];
+        									if(address >= memorySize) return false;
+													globalCache->writeByte(address, static_cast<unsigned char>(reg_file[operand1] & 0xFF)); // Store LS byte of RS at RG address
+    										}
+    										break;
+								case 17: // ILDB
+    										{
+        									unsigned int address = reg_file[operand2];
+        									if(address >= memorySize) return false;
+													reg_file[operand1] = globalCache->readByte(address);
+    										}
+    										break;
                 case 18: //ADD
                         reg_file[operand1] = reg_file[operand2] + reg_file[operand3]; //add RS1 to RS2, sotre in RD
                         break;
@@ -267,9 +326,34 @@ bool execute(){
                         if(immediate == 0) return false;
                         reg_file[operand1] = static_cast<unsigned int>(static_cast<int>(reg_file[operand2]) / static_cast<int>(immediate)); //Divide RS1 by Imm (signed), result in RD.
                         break;
+								case 29: //CMP
+												if(reg_file[operand2] == reg_file[operand3]){
+													reg_file[operand1] = 0;
+												}
+												else if(reg_file[operand2] > reg_file[operand3]){
+														reg_file[operand1] = 1;
+												}
+												else if(reg_file[operand2] < reg_file[operand3]){
+                            reg_file[operand1] = -1;
+                        }
+												break;
+								case 30: //CMPI
+												if(reg_file[operand2] == immediate){
+													reg_file[operand1] = 0;
+												}
+												else if(reg_file[operand2] > immediate){
+													reg_file[operand1] = 1;
+												}
+												else if(reg_file[operand2] < immediate){
+                          reg_file[operand1] = -1;
+                        }
+												break;
                 case 31: //TRP
                         switch(operand1){
                                 case 0: //STOP-Exit
+																				cout << "Execution completed. Total memory cycles: " << mem_cycle_cntr << endl;
+																				delete[] prog_mem;
+																				delete globalCache;
                                         exit(0);
                                         break;
                                 case 1: //Write int in R3 to stdout
