@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/emu4380.dir/main.cpp.o CMakeFiles/emu4380.dir/emu4380.cpp.o -o emu4380 
