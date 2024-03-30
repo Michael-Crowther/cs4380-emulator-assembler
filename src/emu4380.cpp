@@ -160,6 +160,11 @@ bool decode(){
   unsigned int operand2 = cntrl_regs[OPERAND_2];
   unsigned int operand3 = cntrl_regs[OPERAND_3];
 
+	cout << "operation: " << operation << endl;
+	cout << "operand1: " << operand1 << endl;
+	cout << "operand2: " << operand2 << endl;
+	cout << "operand3: " << operand3 << endl;
+
 	//check validity of operation
 	if(validOperations.find(operation) == validOperations.end()){
 		return false;
@@ -208,9 +213,9 @@ bool execute(){
 	unsigned int operand2 = cntrl_regs[OPERAND_2];
 	unsigned int operand3 = cntrl_regs[OPERAND_3];
 	unsigned int immediate = cntrl_regs[IMMEDIATE];
-	cout << "execute" << endl;
-	cout << "operation: " << operation << endl;
-	cout << data_regs[R3] << endl;
+	//cout << "execute" << endl;
+	//cout << "operation: " << operation << endl;
+	//cout << data_regs[R3] << endl;
 
 	switch(operation){
 		case 1: //JMP
@@ -280,7 +285,7 @@ bool execute(){
 					delete globalCache;
 					exit(0);
 				case 1: //Write int in R3 to stdout
-					cout << data_regs[R3] << endl;
+					//cout << data_regs[R3] << endl;
 					cout << reg_file[data_regs[R3]]; //SEG FAULT
 					break;
 				case 2: //Read an integer into R3 from stdin
