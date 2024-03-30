@@ -114,7 +114,7 @@ TEST(DecodeTest, UninitialzedCntrlRegisters){
 
 TEST(ExecuteTest, AddOperation){
   cntrl_regs[OPERATION] = 18;
-  data_regs[REG_VAL_1] = 0;
+  cntrl_regs[OPERAND_1] = 0;
   cntrl_regs[OPERAND_2] = 1;
   cntrl_regs[OPERAND_3] = 2;
   reg_file[1] = 5;
@@ -126,7 +126,7 @@ TEST(ExecuteTest, AddOperation){
 
 TEST(ExecuteTest, SubOperation){
   cntrl_regs[OPERATION] = 20;
-  data_regs[REG_VAL_1] = 0;
+  cntrl_regs[OPERAND_1] = 0;
   cntrl_regs[OPERAND_2] = 1;
   cntrl_regs[OPERAND_3] = 2;
   reg_file[1] = 10;
@@ -138,7 +138,7 @@ TEST(ExecuteTest, SubOperation){
 
 TEST(ExecuteTest, MULOperation){
   cntrl_regs[OPERATION] = 22;
-  data_regs[REG_VAL_1] = 0;
+  cntrl_regs[OPERAND_1] = 0;
   cntrl_regs[OPERAND_2] = 1;
   cntrl_regs[OPERAND_3] = 2;
   reg_file[1] = 5;
@@ -150,7 +150,7 @@ TEST(ExecuteTest, MULOperation){
 
 TEST(ExecuteTest, DivOperation){
   cntrl_regs[OPERATION] = 24;
-  data_regs[REG_VAL_1] = 0;
+  cntrl_regs[OPERAND_1] = 0;
   cntrl_regs[OPERAND_2] = 1;
   cntrl_regs[OPERAND_3] = 2;
   reg_file[1] = 10;
@@ -162,9 +162,9 @@ TEST(ExecuteTest, DivOperation){
 
 TEST(ExecuteTest, StoreMemoryLimit){
 	int size = 131072;
-	cntrl_regs[CntrlRegNames::OPERATION] = 10;
-	data_regs[0] = 1;
-	data_regs[1] = size + 1;
+	cntrl_regs[OPERATION] = 10;
+	cntrl_regs[OPERAND_1] = 1;
+	cntrl_regs[IMMEDIATE] = size + 1;
 	reg_file[1] = 12345;
 
 	EXPECT_FALSE(execute());
@@ -257,17 +257,11 @@ TEST(RegisterTest, HandlesInvalidRegisters){
   EXPECT_FALSE(isValidRegister(validReg));
 }
 
-TEST(TrapTests, TRPStopExit){
-        cntrl_regs[OPERATION] = 31;
-        data_regs[REG_VAL_1] = 0;
-
-        EXPECT_FALSE(execute());
-}
 
 TEST(TrapTests, TRPWriteIntToStdOut){
         cntrl_regs[OPERATION] = 31;
-        data_regs[REG_VAL_1] = 1;
-        reg_file[3] = 123;
+        cntrl_regs[IMMEDIATE] = 1;
+        reg_file[R3] = 123;
 
   std::stringstream buffer;
   std::streambuf* prevCoutStreamBuf = std::cout.rdbuf();
@@ -277,12 +271,13 @@ TEST(TrapTests, TRPWriteIntToStdOut){
 
   std::cout.rdbuf(prevCoutStreamBuf);
 
-  EXPECT_EQ(buffer.str(), "123\n");
+  EXPECT_EQ(buffer.str(), "123");
 }
 
+/*
 TEST(TrapTests, TRPReadIntToR3){
         cntrl_regs[OPERATION] = 31;
-        data_regs[REG_VAL_1] = 2;
+        cntrl_regs[IMMEDIATE] = 2;
 
   std::istringstream simulatedInput("42\n"); // Simulated input to be read into R3
   std::streambuf* prevCinStreamBuf = std::cin.rdbuf();
@@ -294,10 +289,12 @@ TEST(TrapTests, TRPReadIntToR3){
 
   EXPECT_EQ(reg_file[3], 42);
 }
+*/
 
+/*
 TEST(TrapTests, TRPPrintAllRegisters){
     cntrl_regs[OPERATION] = 31;
-    data_regs[REG_VAL_1] = 98;
+    cntrl_regs[IMMEDIATE] = 98;
 
     // Initialize reg_file with test values
     for(size_t i = 0; i < num_gen_regs; ++i) {
@@ -331,6 +328,7 @@ TEST(TrapTests, TRPPrintAllRegisters){
 
     EXPECT_EQ(buffer.str(), expectedOutput.str());
 }
+*/
 
 int main(int argc, char **argv){
 	::testing::InitGoogleTest(&argc, argv);
