@@ -48,7 +48,8 @@ def test_assembler_errors(input_asm, expected_exit_code):
 		"movInstructions2.asm",
 		"movInstructions3.asm",
 		"trpInstructions.asm",
-		"allInstructions.asm"
+		"allInstructions.asm",
+		"allInstructions2.asm",
 ])
 
 # Test case for the valid input file

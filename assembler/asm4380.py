@@ -26,7 +26,8 @@ def parse_line(line, line_num, unresolved_labels):
 	instruction_keywords = [
     'jmp', 'mov', 'movi', 'lda', 'str', 'ldr', 'stb', 'ldb',
     'add', 'addi', 'sub', 'subi', 'mul', 'muli', 'div',
-    'sdiv', 'divi', 'trp'
+    'sdiv', 'divi', 'trp', 'istr', 'ildr', 'istb', 'ildb',
+		'jmr', 'bnz', 'bgt', 'blt', 'cmp', 'cmpi'
   ]
 
 	words = code.split()
@@ -127,9 +128,11 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 	operator = parts[0].lower() #handle case insensitive
 	operands = parts[1].split(',') if len(parts) > 1 else []
 	opcode_map = {
-		'jmp': 1, 'mov': 7, 'movi': 8, 'lda': 9, 'str': 10, 'ldr': 11, 'stb': 12, 'ldb': 13,
+		'jmp': 1, 'jmr': 2, 'bnz': 3, 'bgt': 4, 'blt': 5,
+		'mov': 7, 'movi': 8, 'lda': 9, 'str': 10, 'ldr': 11, 'stb': 12, 'ldb': 13,
+		'istr': 14, 'ildr': 15, 'istb': 16, 'ildb': 17, 
 		'add': 18, 'addi': 19, 'sub': 20, 'subi': 21, 'mul': 22, 'muli': 23, 'div': 24,
-		'sdiv': 25, 'divi': 26, 'trp': 31
+		'sdiv': 25, 'divi': 26, 'cmp': 29, 'cmpi': 30, 'trp': 31
 	}
 
 	#print(f"got to process instruction")
@@ -145,11 +148,12 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 	instruction_bytes = [opcode_map[operator]]
 	
 	#process operands from instruction type
-	if operator in ['jmp', 'lda', 'str', 'ldr', 'stb', 'ldb']:
-		#print(f"operator: {operator}")
-		#print(f"operands: {operands}")
+	if operator in ['jmp', 'lda', 'str', 'ldr', 'stb', 'ldb', 'istr', 'ildr', 'istb', 'ildb', 'jmr', 'bnz', 'bgt', 'blt']:
+		print(f"operator: {operator}")
+		print(f"{operands}")
 		for operand in operands:
 			#print(f"operand: {operand}")
+			operand = operand.strip();
 			if operand.startswith("'"):
 				instruction_bytes = char_to_ascii(operand, instruction_bytes)
 			elif operand.isdigit() or (operand.startswith('-') and operand[1:].isdigit()):
@@ -170,7 +174,7 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 				#print(f"adding to unresovled labels: {operand.strip()}")
 				unresolved_labels.add(operand.strip())
 
-	elif operator in ['mov', 'add', 'sub', 'mul', 'div', 'sdiv']:
+	elif operator in ['mov', 'add', 'sub', 'mul', 'div', 'sdiv', 'cmp']:
 		for operand in operands:
 			operand = operand.strip()
 			if operand.startswith("'"):
@@ -191,7 +195,7 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 			else:
 				unresolved_labels.add(operand.strip())
 
-	elif operator in ['movi', 'addi', 'subi', 'muli', 'divi']:
+	elif operator in ['movi', 'addi', 'subi', 'muli', 'divi', 'cmpi']:
 		reg_operand = operands[0].lower()
 		if reg_operand.startswith("'"):
 			instruction_bytes = char_to_ascii(operand, instruction_bytes)

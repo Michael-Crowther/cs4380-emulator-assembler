@@ -9,25 +9,39 @@
 using namespace std;
 
 int main(int argc, char** argv){
-	if(argc < 2 || argc > 3){
-		cout << "Enter at least one arg, no more than two" << endl;
-		return 0;
-	}
+	if(argc < 2){
+    cout << "Usage: " << argv[0] << " <input.bin> [-m memorySize] [-c cacheType]" << endl;
+    return 0;
+  }
 
-	string bytecodeFile = argv[1];
+  string bytecodeFile;
+  unsigned long memorySize = 131072;
+  unsigned int cacheType = 0;
 
-	if(argc == 3){
-		char* endPtr;
-		memorySize = strtoul(argv[2], &endPtr, 10);
+    for (int i = 1; i < argc; i++) {
+        if (string(argv[i]) == "-m" && i + 1 < argc) {
+            char* endPtr;
+            memorySize = strtoul(argv[i + 1], &endPtr, 10);
+            if (memorySize <= 0 || memorySize > 4294967295) {
+                cout << "INSUFFICIENT MEMORY SPACE\n";
+                return 2;
+            }
+            i++;
+        } else if (string(argv[i]) == "-c" && i + 1 < argc) {
+            cacheType = atoi(argv[i + 1]);
+            if (cacheType < 0 || cacheType > 3) {
+                cout << "Invalid cache configuration. Aborting.\n";
+                return 2;
+            }
+            i++;
+        } else if (bytecodeFile.empty()) {
+            bytecodeFile = argv[i];
+        }
+    }
 
-		if(memorySize <= 0 || memorySize > 4294967295){
-			cout << "INSUFFICIENT MEMORY SPACE\n";
-			return 2;
-		}
-	}
-
-	//allocate program memory
+  //allocate program memory
   init_mem(memorySize);
+  init_cache(cacheType);
 
   //open binary file
   ifstream binaryFile(bytecodeFile, ios::binary);
@@ -65,5 +79,10 @@ int main(int argc, char** argv){
 	}
 
   delete[] prog_mem;
+	cout << "got here" << endl;
+	if(globalCache != nullptr){
+		delete globalCache;
+		globalCache = nullptr;
+	}
   return 1;
 }

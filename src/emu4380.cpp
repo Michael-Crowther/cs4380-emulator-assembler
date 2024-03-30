@@ -11,9 +11,55 @@ using namespace std;
 unsigned int reg_file[num_gen_regs];
 unsigned char* prog_mem = nullptr;
 unsigned int memorySize = 131072;
+unsigned int mem_cycle_cntr = 0;
 unsigned int cntrl_regs[num_cntrl_regs];
 unsigned int data_regs[num_data_regs];
 static const unordered_set<unsigned int> validOperations = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
+Cache* globalCache = nullptr;
+
+void init_cache(unsigned int cacheType){
+  delete globalCache; //cleanup existing cache if any
+  switch(cacheType){
+    case 0:
+      globalCache = new NoCache();
+      break;
+    case 1:
+      //globalCache = new DirectMappedCache();
+      break;
+    case 2:
+      //globalCache = new FullyAssociativeCache();
+      break;
+    default:
+      globalCache = new NoCache();
+      break;
+  }
+}
+
+//NoCache methods
+unsigned char NoCache::readByte(unsigned int address) {
+  mem_cycle_cntr += 8;
+  return prog_mem[address];
+}
+
+unsigned int NoCache::readWord(unsigned int address) {
+  mem_cycle_cntr += 8;
+  return *reinterpret_cast<unsigned int*>(&prog_mem[address]);
+}
+
+void NoCache::writeByte(unsigned int address, unsigned char byte) {
+  mem_cycle_cntr += 8;
+  prog_mem[address] = byte;
+}
+
+void NoCache::writeWord(unsigned int address, unsigned int word){
+  mem_cycle_cntr += 8;
+  *reinterpret_cast<unsigned int*>(&prog_mem[address]) = word;
+}
+
+void NoCache::init(unsigned int cacheType) {
+  //initialization logic if needed
+  return;
+}
 
 bool isValidRegister(unsigned int reg){
   return reg < num_gen_regs;
@@ -29,6 +75,7 @@ bool init_mem(unsigned int size){
 }
 
 bool fetch(){
+	cout << "fetch" << endl;
   if(reg_file[PC] >= memorySize || reg_file[PC] + 8 > memorySize){
     return false;
   }
@@ -52,6 +99,7 @@ bool fetch(){
 
 
 bool decode(){
+	cout << "decode" << endl;
 	unsigned int operation = cntrl_regs[OPERATION];
   unsigned int operand1 = cntrl_regs[OPERAND_1];
   unsigned int operand2 = cntrl_regs[OPERAND_2];
@@ -100,6 +148,7 @@ bool decode(){
 
 
 bool execute(){
+	cout << "execute" << endl;
 	unsigned int operation = cntrl_regs[OPERATION];
 	unsigned int operand2 = cntrl_regs[OPERAND_2];
 	unsigned int operand3 = cntrl_regs[OPERAND_3];
@@ -202,4 +251,3 @@ bool execute(){
 	}	
 	return true;
 }
-
