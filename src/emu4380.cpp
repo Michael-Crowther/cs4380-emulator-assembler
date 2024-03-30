@@ -129,7 +129,8 @@ bool init_mem(unsigned int size){
 }
 
 bool fetch(){
-	//cout << "fetch" << endl;
+	cout << "fetch" << endl;
+	cout << "data_regs[R3]" << data_regs[R3] << endl;
   if(reg_file[PC] >= memorySize || reg_file[PC] + 8 > memorySize){
     return false;
   }
@@ -209,11 +210,13 @@ bool execute(){
 	unsigned int operand3 = cntrl_regs[OPERAND_3];
 	unsigned int immediate = cntrl_regs[IMMEDIATE];
 
+/*
 	cout << "operation: " << operation << endl;
 	cout << "operand2: " << operand2 << endl;
 	cout << "operand3: " << operand3 << endl;
 	cout << "immediate: " << immediate << endl;
 	cout << "data_regs[R3]: " << data_regs[R3] << endl;
+*/
 
 	switch(operation){
 		case 1: //JMP
