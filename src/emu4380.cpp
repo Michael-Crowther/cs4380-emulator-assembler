@@ -129,8 +129,7 @@ bool init_mem(unsigned int size){
 }
 
 bool fetch(){
-	cout << "fetch" << endl;
-	cout << "data_regs[R3]" << data_regs[R3] << endl;
+	//cout << "fetch" << endl;
   if(reg_file[PC] >= memorySize || reg_file[PC] + 8 > memorySize){
     return false;
   }
@@ -202,119 +201,106 @@ bool decode(){
 	return true;
 }
 
-
 bool execute(){
-	//cout << "execute" << endl;
-	unsigned int operation = cntrl_regs[OPERATION];
-	unsigned int operand2 = cntrl_regs[OPERAND_2];
-	unsigned int operand3 = cntrl_regs[OPERAND_3];
-	unsigned int immediate = cntrl_regs[IMMEDIATE];
+        unsigned int operation = cntrl_regs[OPERATION];
+        unsigned int operand1 = cntrl_regs[OPERAND_1];
+        unsigned int operand2 = cntrl_regs[OPERAND_2];
+        unsigned int operand3 = cntrl_regs[OPERAND_3];
+        unsigned int immediate = cntrl_regs[IMMEDIATE];
 
-/*
-	cout << "operation: " << operation << endl;
-	cout << "operand2: " << operand2 << endl;
-	cout << "operand3: " << operand3 << endl;
-	cout << "immediate: " << immediate << endl;
-	cout << "data_regs[R3]: " << data_regs[R3] << endl;
-*/
-
-	switch(operation){
-		case 1: //JMP
-			reg_file[PC] = immediate; //jump to address of immediate
-			break;
-		case 7: //MOV
-			reg_file[data_regs[REG_VAL_1]] = data_regs[REG_VAL_2]; //move contents of RS to RD
-			break;
-		case 8: //MOVI
-			reg_file[data_regs[REG_VAL_1]] = immediate; //move immediate value into RD
-			break;
-		case 9: //LDA
-			reg_file[data_regs[REG_VAL_1]] = immediate; //load address of immediate into RD
-			break;
-		case 10: //STR
-			if(immediate >= memorySize) return false;
-			globalCache->writeWord(immediate, data_regs[REG_VAL_1]);
-			break;
-		case 11: //LDR
-			if(immediate >= memorySize) return false;
-			//cout << data_regs[R3] << endl;
-			reg_file[data_regs[REG_VAL_1]] = globalCache->readWord(immediate);
-			break;
-		case 12: //STB
-			if(immediate >= memorySize) return false;
-			globalCache->writeByte(immediate, static_cast<unsigned char>(reg_file[data_regs[REG_VAL_1]] & 0xFF));
-			break;
-		case 13: //LDB
-			if(immediate >= memorySize) return false;
-			reg_file[data_regs[REG_VAL_1]] = globalCache->readByte(immediate);
-			break;
-		case 18: //ADD
-			reg_file[data_regs[REG_VAL_1]] = reg_file[operand2] + reg_file[operand3]; //add RS1 to RS2, sotre in RD
-			break;
-		case 19: //ADDI
-			reg_file[data_regs[REG_VAL_1]] = reg_file[operand2] + immediate; //Add Imm to RS1, store in RD
-			break;
-		case 20: //SUB
-			reg_file[data_regs[REG_VAL_1]] = reg_file[operand2] - reg_file[operand3]; //subtract RS2 from RS1, store result in RD
-			break;
-		case 21: //SUBI
-			reg_file[data_regs[REG_VAL_1]] = reg_file[operand2] - immediate; //subtract imm from RS1 store in RD
-			break;
-		case 22: //MUL
-			reg_file[data_regs[REG_VAL_1]] = reg_file[operand2] * reg_file[operand3]; //multiply RS1 by RS2, store in RD
-			break;
-		case 23: //MULI
-			reg_file[data_regs[REG_VAL_1]] = reg_file[operand2] * immediate; //multiply RS1 by immediate, store in RD
-			break;
-		case 24: //DIV
-			if(reg_file[operand3] == 0) return false; //division by 0
-			reg_file[data_regs[REG_VAL_1]] = reg_file[operand2] / reg_file[operand3]; //unsigned int division RS1/RS2, store in RD
-			break;
-		case 25: //SDIV
-			if(reg_file[operand3] == 0) return false;
-			reg_file[data_regs[REG_VAL_1]] = static_cast<unsigned int>(static_cast<int>(reg_file[operand2]) / static_cast<int>(reg_file[operand3])); //signed division of RS1/RS2
-			break;
-		case 26: //DIVI
-			if(immediate == 0) return false;
-			reg_file[data_regs[REG_VAL_1]] = static_cast<unsigned int>(static_cast<int>(reg_file[operand2]) / static_cast<int>(immediate)); //Divide RS1 by Imm (signed), result in RD.
-			break;
-		case 31: //TRP
-			//cout << "trap value: " << data_regs[REG_VAL_1] << endl;
-			switch(data_regs[REG_VAL_1]){
-				case 0: //STOP-Exit
-					delete[] prog_mem;
-					delete globalCache;
-					exit(0);
-				case 1: //Write int in R3 to stdout
-					//cout << data_regs[R3] << endl;
-					cout << reg_file[data_regs[R3]]; //SEG FAULT
-					break;
-				case 2: //Read an integer into R3 from stdin
-					cin >> reg_file[data_regs[R3]];
-					break;
-				case 3: //Write char in R3 to stdout
-					cout << static_cast<char>(reg_file[data_regs[R3]]);
-					break;
-				case 4: //Read a char into R3 from stdin
-					reg_file[data_regs[R3]] = static_cast<unsigned int>(cin.get());
-					break;
-				case 98: //Print all registers to stdout
-					for(size_t i = 0; i < num_gen_regs; ++i){
-        		// Print general-purpose registers
-        		cout << "R" << i << "\t" << reg_file[data_regs[i]] << endl;
-    			}
-    			// Printing special registers with their names in all caps as per requirement
-    			cout << "PC\t" << reg_file[data_regs[PC]] << endl;
-    			cout << "SL\t" << reg_file[data_regs[SL]] << endl;
-    			cout << "SB\t" << reg_file[data_regs[SB]] << endl;
-    			cout << "SP\t" << reg_file[data_regs[SP]] << endl;
-    			cout << "FP\t" << reg_file[data_regs[FP]] << endl;
-    			cout << "HP\t" << reg_file[data_regs[HP]] << endl;
-					break;
-				default:
-					return false;
-			}
-		break;
-	}	
-	return true;
+        switch(operation){
+                case 1: //JMP
+                        reg_file[PC] = immediate; //jump to address of immediate
+                        break;
+                case 7: //MOV
+                        reg_file[operand1] = reg_file[operand2]; //move contents of RS to RD
+                        break;
+                case 8: //MOVI
+                        reg_file[operand1] = immediate; //move immediate value into RD
+                        break;
+                case 9: //LDA
+                        reg_file[operand1] = immediate; //load address of immediate into RD
+                        break;
+                case 10: //STR
+                        if(immediate >= memorySize) return false;
+                        *reinterpret_cast<unsigned int*>(prog_mem + immediate) = reg_file[operand2]; //store integer in RS at address immediate
+                        break;
+                case 11: //LDR
+                        if(immediate >= memorySize) return false;
+                        reg_file[operand1] = *reinterpret_cast<unsigned int*>(prog_mem + immediate); //load integer at memory address into RD
+                        break;
+                case 12: //STB
+                        if(immediate >= memorySize) return false;
+                        prog_mem[immediate] = static_cast<unsigned char>(reg_file[operand2] & 0xFF); //store least significant byte in RS at Address
+                        break;
+                case 13: //LDB
+                        if(immediate >= memorySize) return false;
+                        reg_file[operand1] = prog_mem[immediate]; //load byte at address into RD
+                        break;
+                case 18: //ADD
+                        reg_file[operand1] = reg_file[operand2] + reg_file[operand3]; //add RS1 to RS2, sotre in RD
+                        break;
+                case 19: //ADDI
+                        reg_file[operand1] = reg_file[operand2] + immediate; //Add Imm to RS1, store in RD
+                        break;
+                case 20: //SUB
+                        reg_file[operand1] = reg_file[operand2] - reg_file[operand3]; //subtract RS2 from RS1, store result in RD
+                        break;
+                case 21: //SUBI
+                        reg_file[operand1] = reg_file[operand2] - immediate; //subtract imm from RS1 store in RD
+                        break;
+                case 22: //MUL
+                        reg_file[operand1] = reg_file[operand2] * reg_file[operand3]; //multiply RS1 by RS2, store in RD
+                        break;
+                case 23: //MULI
+                        reg_file[operand1] = reg_file[operand2] * immediate; //multiply RS1 by immediate, store in RD
+                        break;
+                case 24: //DIV
+                        if(reg_file[operand3] == 0) return false; //division by 0
+                        reg_file[operand1] = reg_file[operand2] / reg_file[operand3]; //unsigned int division RS1/RS2, store in RD
+                        break;
+                case 25: //SDIV
+                        if(reg_file[operand3] == 0) return false;
+                        reg_file[operand1] = static_cast<unsigned int>(static_cast<int>(reg_file[operand2]) / static_cast<int>(reg_file[operand3])); //signed division of RS1/RS2
+                        break;
+                case 26: //DIVI
+                        if(immediate == 0) return false;
+                        reg_file[operand1] = static_cast<unsigned int>(static_cast<int>(reg_file[operand2]) / static_cast<int>(immediate)); //Divide RS1 by Imm (signed), result in RD.
+                        break;
+                case 31: //TRP
+                        switch(operand1){
+                                case 0: //STOP-Exit
+                                        exit(0);
+                                        break;
+                                case 1: //Write int in R3 to stdout
+                                        cout << reg_file[R3];
+                                        break;
+                                case 2: //Read an integer into R3 from stdin
+                                        cin >> reg_file[R3];
+                                        break;
+                                case 3: //Write char in R3 to stdout
+                                        cout << static_cast<char>(reg_file[R3]);
+                                        break;
+                                case 4: //Read a char into R3 from stdin
+                                        reg_file[R3] = static_cast<unsigned int>(cin.get());
+                                        break;
+                                case 98: //Print all registers to stdout
+                                        for(size_t i = 0; i < num_gen_regs; ++i){
+                        // Print general-purpose registers
+                        cout << "R" << i << "\t" << reg_file[i] << endl;
+                        }
+                        // Printing special registers with their names in all caps as per requirement
+                        cout << "PC\t" << reg_file[PC] << endl;
+                        cout << "SL\t" << reg_file[SL] << endl;
+                        cout << "SB\t" << reg_file[SB] << endl;
+                        cout << "SP\t" << reg_file[SP] << endl;
+                        cout << "FP\t" << reg_file[FP] << endl;
+                        cout << "HP\t" << reg_file[HP] << endl;
+                                        break;
+                                default:
+                                        return false;
+                        }
+                break;
+        }
+        return true;
 }
