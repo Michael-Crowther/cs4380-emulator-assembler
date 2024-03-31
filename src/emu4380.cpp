@@ -5,6 +5,7 @@
 #include <iostream>
 #include <cstring>
 #include <unordered_set>
+#include <typeinfo>
 #include "../include/emu4380.h"
 
 using namespace std;
@@ -62,56 +63,239 @@ void NoCache::init(unsigned int cacheType) {
   return;
 }
 
+
+
 //DirectMappedCache methods
+//constructor
+DirectMappedCache::DirectMappedCache() : cacheLines(numLines) {}
+
+//private methods
+unsigned int DirectMappedCache::getTag(unsigned int address) const {
+    return address / (blockSize * numLines);
+}
+
+unsigned int DirectMappedCache::getIndex(unsigned int address) const {
+    return (address / blockSize) % numLines;
+}
+
+unsigned int DirectMappedCache::getBlockOffset(unsigned int address) const {
+    return address % blockSize;
+}
+
+void DirectMappedCache::writeBack(unsigned int index) {
+    auto& line = cacheLines[index];
+    if (line.dirty) {
+        unsigned int startAddress = (line.tag * numLines + index) * blockSize;
+        std::memcpy(&prog_mem[startAddress], line.data.data(), blockSize);
+        line.dirty = false;
+        mem_cycle_cntr += 14; // Additional cycles for write-back
+    }
+}
+
+void DirectMappedCache::loadFromMemory(unsigned int address, unsigned int index) {
+    unsigned int startAddress = address - getBlockOffset(address);
+    auto& line = cacheLines[index];
+    writeBack(index); // Write back if needed
+    std::memcpy(line.data.data(), &prog_mem[startAddress], blockSize);
+    line.valid = true;
+    line.tag = getTag(address);
+    mem_cycle_cntr += 15; // Additional cycles for reading a block into cache
+}
+
+//public methods
 unsigned char DirectMappedCache::readByte(unsigned int address) {
-  //TODO
-  return 'a';
+  unsigned int index = getIndex(address);
+	unsigned int tag = getTag(address);
+	unsigned int offset = getBlockOffset(address);
+
+	auto& line = cacheLines[index];
+	if(line.valid && line.tag == tag){
+		mem_cycle_cntr += 1; //Cache hit
+		return line.data[offset];
+	} 
+	else {
+		loadFromMemory(address, index);
+		return line.data[offset]; //a hit after loading
+	}
 }
 
 unsigned int DirectMappedCache::readWord(unsigned int address) {
-  //TODO
-  return 0;
+  unsigned int value = 0;
+  for (int i = 0; i < 4; ++i) {
+      value |= static_cast<unsigned int>(readByte(address + i)) << (8 * i);
+  }
+  return value;
 }
 
 void DirectMappedCache::writeByte(unsigned int address, unsigned char byte) {
-  //TODO
-  return;
+    unsigned int index = getIndex(address);
+    unsigned int tag = getTag(address);
+    unsigned int offset = getBlockOffset(address);
+
+    auto& line = cacheLines[index];
+    if (!(line.valid && line.tag == tag)) {
+        loadFromMemory(address, index); // Ensures correct block is loaded
+    }
+    line.data[offset] = byte;
+    line.dirty = true;
+    mem_cycle_cntr += 1; // Considered a cache hit
 }
 
 void DirectMappedCache::writeWord(unsigned int address, unsigned int word){
-  //TODO
-  return;
+  for (int i = 0; i < 4; ++i) {
+  	writeByte(address + i, static_cast<unsigned char>((word >> (8 * i)) & 0xFF));
+  }
 }
+
 void DirectMappedCache::init(unsigned int cacheType) {
-  //initialization logic if needed
-  return;
+  for (auto& line : cacheLines) {
+        line.valid = false;
+        line.dirty = false;
+    }
 }
+
+
+
 
 
 //FullyAssociativeCache methods
+//constructor
+FullyAssociativeCache::FullyAssociativeCache() : cacheLines(numLines) {}
+
+//private methods
+unsigned int FullyAssociativeCache::calculateTag(unsigned int address) const {
+    return address / blockSize;
+}
+
+void FullyAssociativeCache::accessLine(unsigned int tag) {
+    // If tag exists in LRU map, move it to the front of the LRU list
+    if (lruMap.find(tag) != lruMap.end()) {
+        lruList.splice(lruList.begin(), lruList, lruMap[tag]);
+        lruMap[tag] = lruList.begin();
+    }
+}
+
+void FullyAssociativeCache::evictIfNeeded() {
+    if (lruList.size() >= numLines) {
+        // Evict the least recently used line
+        unsigned int tagToEvict = lruList.back();
+        writeBack(tagToEvict);
+        // Remove from LRU tracking
+        lruList.pop_back();
+        lruMap.erase(tagToEvict);
+    }
+}
+
+void FullyAssociativeCache::loadLine(unsigned int address, unsigned int tag) {
+    evictIfNeeded();
+    // Find an invalid line or just use the one corresponding to the evicted tag
+    for (auto& line : cacheLines) {
+        if (!line.valid || line.tag == tag) {
+            std::memcpy(line.data.data(), &prog_mem[address - (address % blockSize)], blockSize);
+            line.valid = true;
+            line.dirty = false;
+            line.tag = tag;
+            // Update LRU
+            lruList.push_front(tag);
+            lruMap[tag] = lruList.begin();
+            break;
+        }
+    }
+}
+
+void FullyAssociativeCache::writeBack(unsigned int tag) {
+	for (auto& line : cacheLines) {
+  	if (line.valid && line.dirty && line.tag == tag) {
+    	// address to write back to
+      unsigned int address = line.tag * blockSize;
+      // write back to memory
+      std::memcpy(&prog_mem[address], line.data.data(), blockSize);
+      line.dirty = false;
+      mem_cycle_cntr += 14; // write-back penalty
+      break;
+    }
+  }
+}
+
 unsigned char FullyAssociativeCache::readByte(unsigned int address) {
-  //TODO
-  return 'a';
+	unsigned int tag = calculateTag(address);
+  unsigned int offset = address % blockSize;
+
+  // Search for the tag in the cache
+  for (auto& line : cacheLines) {
+      if (line.valid && line.tag == tag) {
+          // hit - update LRU
+          accessLine(tag);
+          mem_cycle_cntr += 1;
+          return line.data[offset];
+      }
+  }
+
+  // miss - load the line into the cache
+  loadLine(address, tag);
+  mem_cycle_cntr += 15; // miss penalty
+  for (auto& line : cacheLines) {
+  	if (line.valid && line.tag == tag) {
+    	return line.data[offset];
+    	}
+  }
+
+	throw std::runtime_error("Cache line not found after loading");
 }
 
 unsigned int FullyAssociativeCache::readWord(unsigned int address) {
-  //TODO
-  return 0;
+	unsigned int word = 0;
+  for (int i = 0; i < 4; ++i) {
+      word |= static_cast<unsigned int>(readByte(address + i)) << (8 * i);
+  }
+  return word;
 }
 
 void FullyAssociativeCache::writeByte(unsigned int address, unsigned char byte) {
-  //TODO
-  return;
+	unsigned int tag = calculateTag(address);
+  unsigned int offset = address % blockSize;
+
+  // Check if the tag exists in the cache
+  for (auto& line : cacheLines) {
+      if (line.valid && line.tag == tag) {
+          // hit - update LRU and mark as dirty
+          accessLine(tag);
+          line.data[offset] = byte;
+          line.dirty = true;
+          mem_cycle_cntr += 1;
+          return;
+      }
+  }
+
+  // miss - load the line into the cache and write the byte
+  loadLine(address, tag);
+  mem_cycle_cntr += 15; //miss penalty
+	
+	// After loading, find the line again to write the byte
+  for (auto& line : cacheLines) {
+  	if (line.valid && line.tag == tag) {
+    	line.data[offset] = byte;
+      line.dirty = true;
+      return;
+    }
+  }
 }
 
 void FullyAssociativeCache::writeWord(unsigned int address, unsigned int word){
-  //TODO
-  return;
+  for (int i = 0; i < 4; ++i) {
+  	writeByte(address + i, static_cast<unsigned char>((word >> (8 * i)) & 0xFF));
+  }
 }
 void FullyAssociativeCache::init(unsigned int cacheType) {
-  //initialization logic if needed
-  return;
+    for (auto& line : cacheLines) {
+      line.valid = false;
+      line.dirty = false;
+    }
+    lruList.clear();
+    lruMap.clear();
 }
+
+
 
 
 
@@ -129,7 +313,6 @@ bool init_mem(unsigned int size){
 }
 
 bool fetch(){
-	//cout << "fetch" << endl;
   if(reg_file[PC] >= memorySize || reg_file[PC] + 8 > memorySize){
     return false;
   }
@@ -146,6 +329,14 @@ cntrl_regs[IMMEDIATE] =
     (static_cast<unsigned int>(globalCache->readByte(address + 1)) << 8) |
     (static_cast<unsigned int>(globalCache->readByte(address + 2)) << 16) |
     (static_cast<unsigned int>(globalCache->readByte(address + 3)) << 24);
+
+	
+	/*
+  if (dynamic_cast<NoCache*>(globalCache) != nullptr) {
+		mem_cycle_cntr -= 24; //8 cycles for first word
+		mem_cycle_cntr -= 30; //2 cycles for second word
+  }
+	*/
 
   //move to next instruction
   reg_file[RegNames::PC] += 8;
