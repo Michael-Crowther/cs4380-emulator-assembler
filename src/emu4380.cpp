@@ -32,6 +32,9 @@ void init_cache(unsigned int cacheType){
     case 2:
       globalCache = new FullyAssociativeCache();
       break;
+		case 3:
+			globalCache = new TwoWaySetAssociativeCache();
+			break;
     default:
       globalCache = new NoCache();
       break;
@@ -99,7 +102,6 @@ void DirectMappedCache::loadFromMemory(unsigned int address, unsigned int index)
     std::memcpy(line.data.data(), &prog_mem[startAddress], blockSize);
     line.valid = true;
     line.tag = getTag(address);
-    mem_cycle_cntr += 15; // Additional cycles for reading a block into cache
 }
 
 //public methods
@@ -115,16 +117,51 @@ unsigned char DirectMappedCache::readByte(unsigned int address) {
 	} 
 	else {
 		loadFromMemory(address, index);
+		mem_cycle_cntr += 15;
 		return line.data[offset]; //a hit after loading
 	}
 }
 
 unsigned int DirectMappedCache::readWord(unsigned int address) {
-  unsigned int value = 0;
-  for (int i = 0; i < 4; ++i) {
-      value |= static_cast<unsigned int>(readByte(address + i)) << (8 * i);
-  }
-  return value;
+	unsigned int value = 0;
+  unsigned int startOffset = getBlockOffset(address);
+  unsigned int endOffset = getBlockOffset(address + 3);//last byte of word
+
+	//check if word spans two blocks
+	if(startOffset <= 12 || startOffset == endOffset){
+		for (int i = 0; i < 4; ++i) {
+    	value |= static_cast<unsigned int>(readByte(address + i)) << (8 * i);
+    }
+	}
+	else{
+		//word spans two cache lines
+		bool firstBlockLoaded = false;
+		bool secondBlockLoaded = false;
+
+		for (int i = 0; i < 4; ++i) {
+    	// Determine if loading a block is necessary for each byte
+    	unsigned int index = getIndex(address + i);
+      unsigned int tag = getTag(address + i);
+
+      if (!cacheLines[index].valid || cacheLines[index].tag != tag) {
+      	if (i < 2) firstBlockLoaded = true; // First half of the word
+        else secondBlockLoaded = true; // Second half of the word
+          
+        loadFromMemory(address + i, index); // Load necessary block
+      }
+
+      unsigned int offset = getBlockOffset(address + i);
+      value |= static_cast<unsigned int>(cacheLines[index].data[offset]) << (8 * i);
+    }
+
+    // Adjust mem_cycle_cntr based on block loads
+    if (firstBlockLoaded && !secondBlockLoaded) {
+    	mem_cycle_cntr += 15; // Only the first block was loaded
+    } else if (firstBlockLoaded && secondBlockLoaded) {
+    	mem_cycle_cntr += 23; // Both blocks were loaded
+    }
+	}
+	return value;
 }
 
 void DirectMappedCache::writeByte(unsigned int address, unsigned char byte) {
@@ -134,7 +171,8 @@ void DirectMappedCache::writeByte(unsigned int address, unsigned char byte) {
 
     auto& line = cacheLines[index];
     if (!(line.valid && line.tag == tag)) {
-        loadFromMemory(address, index); // Ensures correct block is loaded
+    	loadFromMemory(address, index); // Ensures correct block is loaded
+			mem_cycle_cntr += 15;	
     }
     line.data[offset] = byte;
     line.dirty = true;
@@ -297,6 +335,140 @@ void FullyAssociativeCache::init(unsigned int cacheType) {
 
 
 
+//TwoWaySetAssociativeCache
+//constructor
+TwoWaySetAssociativeCache::TwoWaySetAssociativeCache() : cacheSets(numSets) {}
+
+//private methods
+unsigned int TwoWaySetAssociativeCache::getTag(unsigned int address) const {
+	return address / (blockSize * numSets);
+}
+
+unsigned int TwoWaySetAssociativeCache::getSetIndex(unsigned int address) const {
+  return (address / blockSize) % numSets;
+}
+
+unsigned int TwoWaySetAssociativeCache::getBlockOffset(unsigned int address) const {
+  return address % blockSize;
+}
+
+void TwoWaySetAssociativeCache::updateLRU(unsigned int setIndex, unsigned int accessedLine) {
+	cacheSets[setIndex].lruFlags[accessedLine] = true;  
+  cacheSets[setIndex].lruFlags[1 - accessedLine] = false;
+}
+
+void TwoWaySetAssociativeCache::writeBack(unsigned int setIndex, unsigned int lineIndex) {
+	auto& line = cacheSets[setIndex].lines[lineIndex];
+  if (line.valid && line.dirty) {
+		mem_cycle_cntr += 14; //write back penalty
+  	unsigned int baseAddress = (line.tag * numSets + setIndex) * blockSize;
+    for (unsigned int i = 0; i < blockSize; ++i) {
+    // don't exceed the memorySize
+    	if ((baseAddress + i) < memorySize) {
+    		prog_mem[baseAddress + i] = line.data[i];
+    	}
+  	}
+   line.dirty = false; // Clear the dirty bit after writing back
+  }
+}
+
+void TwoWaySetAssociativeCache::loadFromMemory(unsigned int address, unsigned int setIndex, unsigned int lineIndex) {
+	auto& line = cacheSets[setIndex].lines[lineIndex];
+  unsigned int tag = getTag(address);
+  unsigned int baseAddress = (tag * numSets + setIndex) * blockSize;
+	mem_cycle_cntr += 15;
+
+  for (unsigned int i = 0; i < blockSize; ++i) {
+  	// don't exceed the memorySize
+  	if ((baseAddress + i) < memorySize) {
+    	line.data[i] = prog_mem[baseAddress + i];
+    }
+  }
+
+	line.valid = true;
+  line.dirty = false;
+  line.tag = tag;
+}
+
+unsigned char TwoWaySetAssociativeCache::readByte(unsigned int address) {
+	unsigned int tag = getTag(address);
+  unsigned int setIndex = getSetIndex(address);
+  unsigned int blockOffset = getBlockOffset(address);
+
+  for (unsigned int i = 0; i < 2; ++i) {
+      auto& line = cacheSets[setIndex].lines[i];
+      if (line.valid && line.tag == tag) {
+          // Cache hit
+          updateLRU(setIndex, i);
+          mem_cycle_cntr += 1; // Hit penalty
+          return line.data[blockOffset];
+      }
+  }
+
+  // Cache miss
+  unsigned int lineToUse = cacheSets[setIndex].lruFlags[0] ? 0 : 1; // Use the LRU line
+  if (cacheSets[setIndex].lines[lineToUse].valid && cacheSets[setIndex].lines[lineToUse].dirty) {
+  	writeBack(setIndex, lineToUse);
+  }
+  loadFromMemory(address, setIndex, lineToUse);
+  updateLRU(setIndex, lineToUse);
+  return cacheSets[setIndex].lines[lineToUse].data[blockOffset];
+}
+
+void TwoWaySetAssociativeCache::writeByte(unsigned int address, unsigned char byte) {
+	unsigned int tag = getTag(address);
+  unsigned int setIndex = getSetIndex(address);
+  unsigned int blockOffset = getBlockOffset(address);
+
+  for (unsigned int i = 0; i < 2; ++i) {
+  	auto& line = cacheSets[setIndex].lines[i];
+    if (line.valid && line.tag == tag) {
+    	// Cache hit
+      line.data[blockOffset] = byte;
+      line.dirty = true;
+      updateLRU(setIndex, i);
+      mem_cycle_cntr += 1; // Hit penalty
+      return;
+    }
+  }
+
+  // Cache miss, select LRU line for writing
+  unsigned int lineToUse = cacheSets[setIndex].lruFlags[0] ? 0 : 1;
+  if (cacheSets[setIndex].lines[lineToUse].valid && cacheSets[setIndex].lines[lineToUse].dirty) {
+  	writeBack(setIndex, lineToUse);
+  }
+  loadFromMemory(address, setIndex, lineToUse); // Load the block first
+  cacheSets[setIndex].lines[lineToUse].data[blockOffset] = byte;
+  cacheSets[setIndex].lines[lineToUse].dirty = true;
+  updateLRU(setIndex, lineToUse);
+}
+
+unsigned int TwoWaySetAssociativeCache::readWord(unsigned int address) {
+	unsigned int word = 0;
+  for (int i = 0; i < 4; ++i) {
+  	word |= static_cast<unsigned int>(readByte(address + i)) << (i * 8);
+  }
+  return word;
+}
+
+void TwoWaySetAssociativeCache::writeWord(unsigned int address, unsigned int word) {
+	for (int i = 0; i < 4; ++i) {
+  	writeByte(address + i, static_cast<unsigned char>((word >> (i * 8)) & 0xFF));
+  }
+}
+
+void TwoWaySetAssociativeCache::init(unsigned int cacheType) {
+	for(auto& set : cacheSets){
+		for(auto& line : set.lines){
+			line.valid = false;
+			line.dirty = false;	
+			line.tag = 0;
+			line.data.fill(0);
+		}
+		set.lruFlags = {false, false};
+	}
+}
+
 
 
 bool isValidRegister(unsigned int reg){
@@ -317,26 +489,17 @@ bool fetch(){
     return false;
   }
 
-  //1 byte operation, 3 bytes operands, 4 bytes immediate
-  cntrl_regs[OPERATION] = globalCache->readByte(reg_file[PC]);
-  cntrl_regs[OPERAND_1] = globalCache->readByte(reg_file[PC] + 1);
-  cntrl_regs[OPERAND_2] = globalCache->readByte(reg_file[PC] + 2);
-  cntrl_regs[OPERAND_3] = globalCache->readByte(reg_file[PC] + 3);
+  unsigned int firstWord = globalCache->readWord(reg_file[PC]);
+  cntrl_regs[OPERATION] = firstWord & 0xFF;
+  cntrl_regs[OPERAND_1] = (firstWord >> 8) & 0xFF;
+  cntrl_regs[OPERAND_2] = (firstWord >> 16) & 0xFF;
+  cntrl_regs[OPERAND_3] = (firstWord >> 24) & 0xFF;
 
-	unsigned int address = reg_file[static_cast<int>(RegNames::PC)] + 4;
-cntrl_regs[IMMEDIATE] =
-    static_cast<unsigned int>(globalCache->readByte(address)) |
-    (static_cast<unsigned int>(globalCache->readByte(address + 1)) << 8) |
-    (static_cast<unsigned int>(globalCache->readByte(address + 2)) << 16) |
-    (static_cast<unsigned int>(globalCache->readByte(address + 3)) << 24);
+  cntrl_regs[IMMEDIATE] = globalCache->readWord(reg_file[PC] + 4);
 
-	
-	/*
   if (dynamic_cast<NoCache*>(globalCache) != nullptr) {
-		mem_cycle_cntr -= 24; //8 cycles for first word
-		mem_cycle_cntr -= 30; //2 cycles for second word
+		mem_cycle_cntr -= 6;
   }
-	*/
 
   //move to next instruction
   reg_file[RegNames::PC] += 8;

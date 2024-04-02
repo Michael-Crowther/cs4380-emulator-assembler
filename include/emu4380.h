@@ -108,6 +108,40 @@ class FullyAssociativeCache : public Cache {
     void init(unsigned int cacheType) override;
 };
 
+class TwoWaySetAssociativeCache : public Cache {
+private:
+    struct CacheLine {
+        bool valid = false;
+        bool dirty = false;
+        unsigned int tag = 0;
+        std::array<unsigned char, 16> data{};
+    };
+
+    struct CacheSet {
+        std::array<CacheLine, 2> lines; //2 lines per set
+        std::array<bool, 2> lruFlags = {false, false}; 
+    };
+
+    static const unsigned int numSets = 32; // 64 lines -- 2 lines per set
+    static const unsigned int blockSize = 16;
+    std::vector<CacheSet> cacheSets;
+
+    unsigned int getTag(unsigned int address) const;
+    unsigned int getSetIndex(unsigned int address) const;
+    unsigned int getBlockOffset(unsigned int address) const;
+    void writeBack(unsigned int setIndex, unsigned int lineIndex);
+    void loadFromMemory(unsigned int address, unsigned int setIndex, unsigned int lineIndex);
+    void updateLRU(unsigned int setIndex, unsigned int accessedLine);
+
+public:
+    TwoWaySetAssociativeCache();
+    unsigned char readByte(unsigned int address) override;
+    unsigned int readWord(unsigned int address) override;
+    void writeByte(unsigned int address, unsigned char byte) override;
+    void writeWord(unsigned int address, unsigned int word) override;
+    void init(unsigned int cacheType) override;
+};
+
 
 extern Cache* globalCache;
 
