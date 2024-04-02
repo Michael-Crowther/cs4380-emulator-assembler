@@ -180,9 +180,45 @@ void DirectMappedCache::writeByte(unsigned int address, unsigned char byte) {
 }
 
 void DirectMappedCache::writeWord(unsigned int address, unsigned int word){
-  for (int i = 0; i < 4; ++i) {
-  	writeByte(address + i, static_cast<unsigned char>((word >> (8 * i)) & 0xFF));
-  }
+	unsigned int startOffset = getBlockOffset(address);
+  unsigned int endOffset = getBlockOffset(address + 3); // Last byte of the word
+
+  // Check if word spans two blocks
+  if (startOffset <= 12 || startOffset == endOffset) {
+  	for (int i = 0; i < 4; ++i) {
+    	writeByte(address + i, static_cast<unsigned char>((word >> (8 * i)) & 0xFF));
+     }
+    } 
+	else {
+  	// Word spans two cache lines
+    bool firstBlockLoaded = false;
+    bool secondBlockLoaded = false;
+
+    for (int i = 0; i < 4; ++i) {
+    	unsigned int currentAddress = address + i;
+      unsigned int index = getIndex(currentAddress);
+      unsigned int tag = getTag(currentAddress);
+
+      // Check if the cache line needs to be loaded or is already present
+      if (!cacheLines[index].valid || cacheLines[index].tag != tag) {
+      	// Determine which half of the word we're in
+        if (i < 2) firstBlockLoaded = true;
+        else secondBlockLoaded = true;
+
+        loadFromMemory(currentAddress, index); // Load necessary block
+      }
+
+      unsigned int offset = getBlockOffset(currentAddress);
+      cacheLines[index].data[offset] = static_cast<unsigned char>((word >> (8 * i)) & 0xFF);
+      cacheLines[index].dirty = true; // Mark the line as dirty since we've written to it
+    }
+
+    if (firstBlockLoaded && !secondBlockLoaded) {
+    	mem_cycle_cntr += 15; // Only the first block was loaded
+    } else if (firstBlockLoaded && secondBlockLoaded) {
+      mem_cycle_cntr += 23; // Both blocks were loaded
+    }
+ }
 }
 
 void DirectMappedCache::init(unsigned int cacheType) {
@@ -191,7 +227,6 @@ void DirectMappedCache::init(unsigned int cacheType) {
         line.dirty = false;
     }
 }
-
 
 
 
@@ -283,10 +318,29 @@ unsigned char FullyAssociativeCache::readByte(unsigned int address) {
 
 unsigned int FullyAssociativeCache::readWord(unsigned int address) {
 	unsigned int word = 0;
+  bool firstBlockMiss = false;
+  bool secondBlockMiss = false;
+
   for (int i = 0; i < 4; ++i) {
-      word |= static_cast<unsigned int>(readByte(address + i)) << (8 * i);
+  	unsigned int currentAddress = address + i;
+    unsigned int tag = calculateTag(currentAddress);
+
+    // Check if the block for this byte is in the cache
+    auto it = lruMap.find(tag);
+    if (it == lruMap.end()) {
+    	// Cache miss
+      if (i < 2) firstBlockMiss = true; // First half of the word
+      else secondBlockMiss = true; // Second half of the word
+    }
+
+    word |= static_cast<unsigned int>(readByte(currentAddress)) << (8 * i);
   }
-  return word;
+
+    if (firstBlockMiss && secondBlockMiss) {
+        mem_cycle_cntr += 8; // Only add the additional cycles for the second block
+    }
+
+    return word;
 }
 
 void FullyAssociativeCache::writeByte(unsigned int address, unsigned char byte) {
@@ -320,8 +374,25 @@ void FullyAssociativeCache::writeByte(unsigned int address, unsigned char byte) 
 }
 
 void FullyAssociativeCache::writeWord(unsigned int address, unsigned int word){
+	bool firstBlockMiss = false;
+  bool secondBlockMiss = false;
+
   for (int i = 0; i < 4; ++i) {
-  	writeByte(address + i, static_cast<unsigned char>((word >> (8 * i)) & 0xFF));
+  	unsigned int currentAddress = address + i;
+    unsigned int tag = calculateTag(currentAddress);
+
+    auto it = lruMap.find(tag);
+    if (it == lruMap.end()) {
+    	if (i < 2) firstBlockMiss = true; // First half of the word indicates first block
+      else secondBlockMiss = true; // Second half of the word indicates potential second block
+    }
+
+    // Perform the byte write operation
+    writeByte(currentAddress, static_cast<unsigned char>((word >> (8 * i)) & 0xFF));
+  }
+
+  if (firstBlockMiss && secondBlockMiss) {
+  	mem_cycle_cntr += 8; // Only add the additional cycles for the second block
   }
 }
 void FullyAssociativeCache::init(unsigned int cacheType) {
@@ -445,15 +516,97 @@ void TwoWaySetAssociativeCache::writeByte(unsigned int address, unsigned char by
 
 unsigned int TwoWaySetAssociativeCache::readWord(unsigned int address) {
 	unsigned int word = 0;
+  unsigned int startOffset = getBlockOffset(address);
+  unsigned int endOffset = getBlockOffset(address + 3); //last byte of the word.
+
+  bool firstBlockMiss = false;
+  bool secondBlockMiss = false;
+
   for (int i = 0; i < 4; ++i) {
-  	word |= static_cast<unsigned int>(readByte(address + i)) << (i * 8);
+  	unsigned int currentAddress = address + i;
+    unsigned int setIndex = getSetIndex(currentAddress);
+    unsigned int tag = getTag(currentAddress);
+    unsigned int blockOffset = getBlockOffset(currentAddress);
+
+    // Attempt to read the byte from the cache, checking both lines in the set.
+    bool foundInCache = false;
+    for (unsigned int j = 0; j < 2; ++j) {
+    	auto& line = cacheSets[setIndex].lines[j];
+      if (line.valid && line.tag == tag) {
+      	// Cache hit
+        foundInCache = true;
+        updateLRU(setIndex, j);
+        word |= static_cast<unsigned int>(line.data[blockOffset]) << (i * 8);
+        break;
+      }
+   }
+
+     if (!foundInCache) {
+     	// Cache miss for this part of the word.
+      if (i < 2) firstBlockMiss = true; // Miss in the first half of the word.
+      else secondBlockMiss = true; // Miss in the second half of the word.
+
+      unsigned int lineToUse = cacheSets[setIndex].lruFlags[0] ? 1 : 0;
+      loadFromMemory(currentAddress, setIndex, lineToUse);
+      updateLRU(setIndex, lineToUse);
+
+      // After loading, read the byte from the newly loaded line.
+      auto& newLine = cacheSets[setIndex].lines[lineToUse];
+      word |= static_cast<unsigned int>(newLine.data[blockOffset]) << (i * 8);
+    }
   }
-  return word;
+
+  if (firstBlockMiss && !secondBlockMiss) {
+  	mem_cycle_cntr += 15; // Only the first block was loaded.
+  } else if (firstBlockMiss && secondBlockMiss) {
+  	mem_cycle_cntr += 23; // Both blocks were loaded
+  }
+
+    return word;
 }
 
 void TwoWaySetAssociativeCache::writeWord(unsigned int address, unsigned int word) {
-	for (int i = 0; i < 4; ++i) {
-  	writeByte(address + i, static_cast<unsigned char>((word >> (i * 8)) & 0xFF));
+	unsigned int startOffset = getBlockOffset(address);
+  unsigned int endOffset = getBlockOffset(address + 3); // Last byte of the word.
+
+  // Determine if the operation potentially spans two blocks within a set.
+  if (startOffset <= (blockSize - 4) || startOffset == endOffset) {
+  	//  word does not span across two blocks.
+    for (int i = 0; i < 4; ++i) {
+    	writeByte(address + i, static_cast<unsigned char>((word >> (i * 8)) & 0xFF));
+    }
+  }
+	else {
+		// word spans across two blocks.
+    bool firstBlockAffected = false;
+    bool secondBlockAffected = false;
+ 
+	  for (int i = 0; i < 4; ++i) {
+    	unsigned int currentAddress = address + i;
+      unsigned int setIndex = getSetIndex(currentAddress);
+      unsigned int tag = getTag(currentAddress);
+            
+      // Determine if this part of the word affects the first or second block.
+      bool isCurrentBlockLoaded = false;
+      for (unsigned int j = 0; j < 2; ++j) {
+      	auto& line = cacheSets[setIndex].lines[j];
+       	if (line.valid && line.tag == tag) {
+        	isCurrentBlockLoaded = true;
+          break; // The current block is already loaded in the cache.
+        }
+      }
+
+      if (!isCurrentBlockLoaded) {
+      	if (i < 2) firstBlockAffected = true;
+        else secondBlockAffected = true;
+      }
+
+      writeByte(currentAddress, static_cast<unsigned char>((word >> (i * 8)) & 0xFF));
+   }
+
+   if (firstBlockAffected && secondBlockAffected) {
+   	 mem_cycle_cntr += 8; // Additional cycles for the second block.
+   }
   }
 }
 
