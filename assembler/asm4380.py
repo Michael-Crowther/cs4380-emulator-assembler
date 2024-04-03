@@ -50,7 +50,7 @@ def parse_line(line, line_num, unresolved_labels):
 	#start parsing line parts
 	parts = code.split(maxsplit=1)
 
-	#print(f"parsed line parts: {parts}")
+	print(f"parsed line parts: {parts}")
 
 	if len(parts) > 1 and parts[1].startswith('.'):
 		#label then directive
@@ -80,6 +80,14 @@ def parse_line(line, line_num, unresolved_labels):
 		directive = parts[0]
 		operand = parts[1] if len(parts) == 2 else None
 		return ('directive', None, f"{directive} {operand}" if operand else directive), unresolved_labels
+	
+	elif len(parts) > 1 and parts[0].lower() not in instruction_keywords:
+		#label then instruction
+		label = parts[0]
+		instruction_and_operands = parts[1].split(maxsplit=1)
+		instruction = instruction_and_operands[0]
+		operand = instruction_and_operands[1] if len(instruction_and_operands) > 1 else None
+		return ('instruction', label, f"{instruction} {operand}" if operand else instruction), unresolved_labels
 
 	else:
 		return ('instruction', None, code), unresolved_labels
@@ -127,18 +135,18 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 	parts = instruction.split(maxsplit=1)
 	operator = parts[0].lower() #handle case insensitive
 	operands = parts[1].split(',') if len(parts) > 1 else []
-	opcode_map = {
-		'jmp': 1, 'jmr': 2, 'bnz': 3, 'bgt': 4, 'blt': 5,
-		'mov': 7, 'movi': 8, 'lda': 9, 'str': 10, 'ldr': 11, 'stb': 12, 'ldb': 13,
-		'istr': 14, 'ildr': 15, 'istb': 16, 'ildb': 17, 
-		'add': 18, 'addi': 19, 'sub': 20, 'subi': 21, 'mul': 22, 'muli': 23, 'div': 24,
-		'sdiv': 25, 'divi': 26, 'cmp': 29, 'cmpi': 30, 'trp': 31
-	}
 
 	#print(f"got to process instruction")
 	#print(f"instruction: {instruction}")
 	#print(f"parts: {parts}")
 	#print(f"{unresolved_labels}")
+	opcode_map = {
+  	'jmp': 1, 'jmr': 2, 'bnz': 3, 'bgt': 4, 'blt': 5,
+  	'mov': 7, 'movi': 8, 'lda': 9, 'str': 10, 'ldr': 11, 'stb': 12, 'ldb': 13,
+  	'istr': 14, 'ildr': 15, 'istb': 16, 'ildb': 17,
+  	'add': 18, 'addi': 19, 'sub': 20, 'subi': 21, 'mul': 22, 'muli': 23, 'div': 24,
+  	'sdiv': 25, 'divi': 26, 'cmp': 29, 'cmpi': 30, 'trp': 31
+	}
 
 	#check for invalid operator
 	if operator not in opcode_map:
@@ -149,8 +157,8 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 	
 	#process operands from instruction type
 	if operator in ['jmp', 'lda', 'str', 'ldr', 'stb', 'ldb', 'istr', 'ildr', 'istb', 'ildb', 'jmr', 'bnz', 'bgt', 'blt']:
-		print(f"operator: {operator}")
-		print(f"{operands}")
+		#print(f"operator: {operator}")
+		#print(f"{operands}")
 		for operand in operands:
 			#print(f"operand: {operand}")
 			operand = operand.strip();
@@ -177,6 +185,7 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 	elif operator in ['mov', 'add', 'sub', 'mul', 'div', 'sdiv', 'cmp']:
 		for operand in operands:
 			operand = operand.strip()
+			#print(f"{operand}")
 			if operand.startswith("'"):
 				instruction_bytes = char_to_ascii(operand, instruction_bytes)
 

@@ -50,6 +50,11 @@ def test_assembler_errors(input_asm, expected_exit_code):
 		"trpInstructions.asm",
 		"allInstructions.asm",
 		"allInstructions2.asm",
+		"prog_a.asm",
+		"prog_b.asm",
+		"prog_c.asm",
+		"prog_d.asm",
+		"prog_e.asm",
 ])
 
 # Test case for the valid input file
