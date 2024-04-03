@@ -80,6 +80,14 @@ def parse_line(line, line_num, unresolved_labels):
 		operand = parts[1] if len(parts) == 2 else None
 		return ('directive', None, f"{directive} {operand}" if operand else directive), unresolved_labels
 
+	elif len(parts) > 1 and parts[0].lower() not in instruction_keywords:
+		#label then instruction
+		label = parts[0]
+		instruction_and_operands = parts[1].split(maxsplit=1)
+		instruction = instruction_and_operands[0]
+		operand = instruction_and_operands[1] if len(instruction_and_operands) > 1 else None
+		return ('instruction', label, f"{instruction} {operand}" if operand else instruction), unresolved_labels
+
 	else:
 		return ('instruction', None, code), unresolved_labels
 
