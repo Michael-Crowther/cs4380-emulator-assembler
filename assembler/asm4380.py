@@ -50,7 +50,7 @@ def parse_line(line, line_num, unresolved_labels):
 	#start parsing line parts
 	parts = code.split(maxsplit=1)
 
-	print(f"parsed line parts: {parts}")
+	#print(f"parsed line parts: {parts}")
 
 	if len(parts) > 1 and parts[1].startswith('.'):
 		#label then directive
