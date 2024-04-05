@@ -29,10 +29,15 @@ bool init_mem(unsigned int size){
 }
 
 bool fetch(){
+
   if(reg_file[PC] >= memorySize || reg_file[PC] + 8 > memorySize){
     return false;
   }
-
+/*
+if (reg_file[PC] + 8 > memorySize) {
+    return false;
+}
+*/	
   //1 byte operation, 3 bytes operands, 4 bytes immediate
   cntrl_regs[OPERATION] = prog_mem[reg_file[PC]];
   cntrl_regs[OPERAND_1] = prog_mem[reg_file[PC] + 1];
