@@ -13,7 +13,7 @@ unsigned char* prog_mem = nullptr;
 unsigned int memorySize = 131072;
 unsigned int cntrl_regs[num_cntrl_regs];
 unsigned int data_regs[num_data_regs];
-static const unordered_set<unsigned int> validOperations = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
+static const unordered_set<unsigned int> validOperations = {1, 7, 8, 9, 10, 11, 12, 13, 18, 19, 20, 21, 22, 23, 24, 25, 26, 31};
 
 bool isValidRegister(unsigned int reg){
   return reg < num_gen_regs;
@@ -34,7 +34,7 @@ bool fetch(){
     return false;
   }
 /*
-if (reg_file[PC] + 8 > memorySize) {
+if (reg_file[PC] >= memorySize || reg_file[PC] + 7 >= memorySize) {
     return false;
 }
 */	
