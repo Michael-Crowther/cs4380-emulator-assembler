@@ -112,6 +112,24 @@ TEST(DecodeTest, UninitialzedCntrlRegisters){
   EXPECT_FALSE(decode());
 }
 
+TEST(DecodeTest, HandlesMOVCorrectly) {
+    unsigned int operand2 = 1; // source register
+    unsigned int operand1 = 2; // destination register
+    reg_file[operand1] = 42;
+
+    cntrl_regs[OPERATION] = 7; // 7 is MOV opcode
+    cntrl_regs[OPERAND_1] = operand1;
+    cntrl_regs[OPERAND_2] = operand2;
+    cntrl_regs[OPERAND_3] = 0;
+
+    bool decodeSuccess = decode();
+
+    EXPECT_TRUE(decodeSuccess);
+    EXPECT_TRUE(isValidRegister(operand1));
+    EXPECT_TRUE(isValidRegister(operand2));
+    EXPECT_EQ(data_regs[REG_VAL_1], reg_file[operand2]);
+}
+
 TEST(ExecuteTest, AddOperation){
   cntrl_regs[OPERATION] = 18;
   cntrl_regs[OPERAND_1] = 0;
@@ -273,62 +291,6 @@ TEST(TrapTests, TRPWriteIntToStdOut){
 
   EXPECT_EQ(buffer.str(), "123");
 }
-
-/*
-TEST(TrapTests, TRPReadIntToR3){
-        cntrl_regs[OPERATION] = 31;
-        cntrl_regs[IMMEDIATE] = 2;
-
-  std::istringstream simulatedInput("42\n"); // Simulated input to be read into R3
-  std::streambuf* prevCinStreamBuf = std::cin.rdbuf();
-  std::cin.rdbuf(simulatedInput.rdbuf());
-
-  execute();
-
-  std::cin.rdbuf(prevCinStreamBuf);
-
-  EXPECT_EQ(reg_file[3], 42);
-}
-*/
-
-/*
-TEST(TrapTests, TRPPrintAllRegisters){
-    cntrl_regs[OPERATION] = 31;
-    cntrl_regs[IMMEDIATE] = 98;
-
-    // Initialize reg_file with test values
-    for(size_t i = 0; i < num_gen_regs; ++i) {
-        reg_file[i] = i * 100;
-    }
-    reg_file[PC] = 1000;
-    reg_file[SL] = 2000;
-    reg_file[SB] = 3000;
-    reg_file[SP] = 4000;
-    reg_file[FP] = 5000;
-    reg_file[HP] = 6000;
-
-    std::stringstream buffer;
-    std::streambuf* prevCoutStreamBuf = std::cout.rdbuf();
-    std::cout.rdbuf(buffer.rdbuf());
-
-    execute();
-
-    std::cout.rdbuf(prevCoutStreamBuf);
-
-    std::stringstream expectedOutput;
-    for(size_t i = 0; i < num_gen_regs; ++i) {
-        expectedOutput << "R" << i << "\t" << i * 100 << std::endl;
-    }
-    expectedOutput << "PC\t" << 1000 << std::endl;
-    expectedOutput << "SL\t" << 2000 << std::endl;
-    expectedOutput << "SB\t" << 3000 << std::endl;
-    expectedOutput << "SP\t" << 4000 << std::endl;
-    expectedOutput << "FP\t" << 5000 << std::endl;
-    expectedOutput << "HP\t" << 6000 << std::endl;
-
-    EXPECT_EQ(buffer.str(), expectedOutput.str());
-}
-*/
 
 int main(int argc, char **argv){
 	::testing::InitGoogleTest(&argc, argv);
