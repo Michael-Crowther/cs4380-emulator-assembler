@@ -40,7 +40,7 @@ bool fetch(){
   cntrl_regs[OPERAND_2] = prog_mem[reg_file[PC] + 2];
   cntrl_regs[OPERAND_3] = prog_mem[reg_file[PC] + 3];
 
-  cntrl_regs[CntrlRegNames::IMMEDIATE] =
+  cntrl_regs[IMMEDIATE] =
       prog_mem[reg_file[PC] + 4] |
       (prog_mem[reg_file[PC] + 5] << 8) |
       (prog_mem[reg_file[PC] + 6] << 16) |
@@ -53,10 +53,10 @@ bool fetch(){
 
 
 bool decode(){
-	unsigned int operation = cntrl_regs[OPERATION];
-  unsigned int operand1 = cntrl_regs[OPERAND_1];
-  unsigned int operand2 = cntrl_regs[OPERAND_2];
-  unsigned int operand3 = cntrl_regs[OPERAND_3];
+  	unsigned int operation = cntrl_regs[OPERATION];
+  	unsigned int operand1 = cntrl_regs[OPERAND_1];
+  	unsigned int operand2 = cntrl_regs[OPERAND_2];
+  	unsigned int operand3 = cntrl_regs[OPERAND_3];
 
 	//check validity of operation
 	if(validOperations.find(operation) == validOperations.end()){
