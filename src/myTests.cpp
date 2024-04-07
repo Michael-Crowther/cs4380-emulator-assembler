@@ -192,6 +192,86 @@ TEST(DecodeTest, DecodeSTBValid) {
     EXPECT_EQ(data_regs[REG_VAL_1], reg_file[6]);
 }
 
+TEST(DecodeTest, DecodeADDValid) {
+    cntrl_regs[OPERATION] = 18; // ADD operation code
+    cntrl_regs[OPERAND_1] = 4; // Destination register (R4)
+    cntrl_regs[OPERAND_2] = 2; // First source register (R2)
+    cntrl_regs[OPERAND_3] = 3; // Second source register (R3)
+
+    reg_file[2] = 10; // Value in R2
+    reg_file[3] = 20; // Value in R3
+
+    bool success = decode();
+
+    ASSERT_TRUE(success);
+    EXPECT_EQ(data_regs[REG_VAL_1], reg_file[2]);
+    EXPECT_EQ(data_regs[REG_VAL_2], reg_file[3]);
+}
+
+TEST(DecodeTest, DecodeSUBValid) {
+    cntrl_regs[OPERATION] = 20; // SUB operation code
+    cntrl_regs[OPERAND_1] = 4; // Destination register (R4)
+    cntrl_regs[OPERAND_2] = 5; // First source register (R5)
+    cntrl_regs[OPERAND_3] = 6; // Second source register (R6)
+
+    reg_file[5] = 30; // Value in R5
+    reg_file[6] = 10; // Value in R6
+
+    bool success = decode();
+
+    ASSERT_TRUE(success);
+    EXPECT_EQ(data_regs[REG_VAL_1], reg_file[5]);
+    EXPECT_EQ(data_regs[REG_VAL_2], reg_file[6]);
+}
+
+TEST(DecodeTest, DecodeMULValid) {
+    cntrl_regs[OPERATION] = 22; // MUL operation code
+    cntrl_regs[OPERAND_1] = 7; // Destination register (R7)
+    cntrl_regs[OPERAND_2] = 8; // First source register (R8)
+    cntrl_regs[OPERAND_3] = 9; // Second source register (R9)
+
+    reg_file[8] = 4; // Value in R8
+    reg_file[9] = 5; // Value in R9
+
+    bool success = decode();
+
+    ASSERT_TRUE(success);
+    EXPECT_EQ(data_regs[REG_VAL_1], reg_file[8]);
+    EXPECT_EQ(data_regs[REG_VAL_2], reg_file[9]);
+}
+
+TEST(DecodeTest, DecodeDIVValid) {
+    cntrl_regs[OPERATION] = 24; // DIV operation code
+    cntrl_regs[OPERAND_1] = 10; // Destination register (R10)
+    cntrl_regs[OPERAND_2] = 11; // First source register (R11)
+    cntrl_regs[OPERAND_3] = 12; // Second source register (R12)
+
+    reg_file[11] = 50; // Value in R11
+    reg_file[12] = 5;  // Value in R12
+
+    bool success = decode();
+
+    ASSERT_TRUE(success);
+    EXPECT_EQ(data_regs[REG_VAL_1], reg_file[11]);
+    EXPECT_EQ(data_regs[REG_VAL_2], reg_file[12]);
+}
+
+TEST(DecodeTest, DecodeSDIVValid) {
+    cntrl_regs[OPERATION] = 25; // SDIV operation code
+    cntrl_regs[OPERAND_1] = 13; // Destination register (R13)
+    cntrl_regs[OPERAND_2] = 14; // First source register (R14)
+    cntrl_regs[OPERAND_3] = 15; // Second source register (R15)
+
+    reg_file[14] = -100; // Value in R14
+    reg_file[15] = 4;    // Value in R15
+
+    bool success = decode();
+
+    ASSERT_TRUE(success);
+    EXPECT_EQ(data_regs[REG_VAL_1], reg_file[14]);
+    EXPECT_EQ(data_regs[REG_VAL_2], reg_file[15]);
+}
+
 TEST(ExecuteTest, AddOperation){
   cntrl_regs[OPERATION] = 18;
   cntrl_regs[OPERAND_1] = 0;
