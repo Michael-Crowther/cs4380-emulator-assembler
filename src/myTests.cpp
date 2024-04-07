@@ -401,6 +401,36 @@ TEST(ExecuteDecodeTest, LDRValid) {
     EXPECT_EQ(reg_file[4], expectedValue);
 }
 
+TEST(ExecuteDecodeTest, STBValid) {
+    cntrl_regs[OPERATION] = 12; // STB operation code
+    cntrl_regs[OPERAND_1] = 3; // Source register (R3)
+    cntrl_regs[IMMEDIATE] = 150;
+    reg_file[3] = 0xABCD;
+
+    init_mem(131072);
+
+    ASSERT_TRUE(decode());
+
+    execute();
+
+    unsigned char storedByte = prog_mem[150];
+    EXPECT_EQ(storedByte, 0xCD);
+}
+
+TEST(ExecuteDecodeTest, LDBValid) {
+    cntrl_regs[OPERATION] = 13; // LDB operation code
+    cntrl_regs[OPERAND_1] = 4; // Destination register (R4)
+    cntrl_regs[IMMEDIATE] = 250;
+
+    init_mem(131072);
+    prog_mem[250] = 0x7E;
+
+    ASSERT_TRUE(decode());
+
+    execute();
+
+    EXPECT_EQ(reg_file[4], 0x7E);
+}
 
 /*
 TEST(ExecuteTest, AddOperation){
