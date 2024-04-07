@@ -372,7 +372,34 @@ TEST(ExecuteDecodeTest, LDAValid) {
     EXPECT_EQ(reg_file[6], 12345);
 }
 
+TEST(ExecuteDecodeTest, STRValid) {
+    cntrl_regs[OPERATION] = 10; // STR operation code
+    cntrl_regs[OPERAND_1] = 3; // Source register (R3)
+    cntrl_regs[IMMEDIATE] = 100;
+    reg_file[3] = 2021;
 
+    init_mem(131072);
+
+    execute();
+
+    unsigned int storedValue = *reinterpret_cast<unsigned int*>(prog_mem + 100);
+    EXPECT_EQ(storedValue, 2021);
+}
+
+TEST(ExecuteDecodeTest, LDRValid) {
+    cntrl_regs[OPERATION] = 11; // LDR operation code
+    cntrl_regs[OPERAND_1] = 4; // Destination register (R4)
+    cntrl_regs[IMMEDIATE] = 200;
+
+    init_mem(131072);
+	
+    unsigned int expectedValue = 1984;
+    *reinterpret_cast<unsigned int*>(prog_mem + 200) = expectedValue;
+
+    execute();
+
+    EXPECT_EQ(reg_file[4], expectedValue);
+}
 
 
 /*
