@@ -328,6 +328,25 @@ TEST(DecodeTest, DecodeDIVIValid) {
     EXPECT_EQ(data_regs[REG_VAL_1], reg_file[8]);
 }
 
+TEST(ExecuteTest, JMPValid) {
+    cntrl_regs[OPERATION] = 1; // JMP operation code
+    cntrl_regs[IMMEDIATE] = 100;
+
+    execute();
+
+    EXPECT_EQ(reg_file[PC], 100);
+}
+
+TEST(ExecuteTest, MOVIValid) {
+    cntrl_regs[OPERATION] = 8; // MOVI operation code
+    cntrl_regs[OPERAND_1] = 5; // Destination register (R5)
+    cntrl_regs[IMMEDIATE] = 42;
+
+    execute();
+
+    EXPECT_EQ(reg_file[5], 42);
+}
+
 /*
 TEST(ExecuteTest, AddOperation){
   cntrl_regs[OPERATION] = 18;
