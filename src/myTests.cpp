@@ -494,6 +494,37 @@ TEST(ExecuteDecodeTest, SUBIValid) {
     EXPECT_EQ(reg_file[7], 20);
 }
 
+TEST(ExecuteDecodeTest, MULValid) {
+    cntrl_regs[OPERATION] = 22; // MUL operation code
+    cntrl_regs[OPERAND_1] = 4; // Destination register (R4)
+    cntrl_regs[OPERAND_2] = 1; // Source register 1 (R1)
+    cntrl_regs[OPERAND_3] = 2; // Source register 2 (R2)
+
+    reg_file[1] = 5; // Value in R1
+    reg_file[2] = 4; // Value in R2
+
+    ASSERT_TRUE(decode());
+
+    execute();
+
+    EXPECT_EQ(reg_file[4], 20);
+}
+
+TEST(ExecuteDecodeTest, MULIValid) {
+    cntrl_regs[OPERATION] = 23; // MULI operation code
+    cntrl_regs[OPERAND_1] = 5; // Destination register (R5)
+    cntrl_regs[OPERAND_2] = 1; // Source register (R1)
+    cntrl_regs[IMMEDIATE] = 3;
+
+    reg_file[1] = 7; // Value in R1
+
+    ASSERT_TRUE(decode());
+
+    execute();
+
+    EXPECT_EQ(reg_file[5], 21);
+}
+
 /*
 TEST(ExecuteTest, AddOperation){
   cntrl_regs[OPERATION] = 18;
