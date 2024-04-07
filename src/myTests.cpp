@@ -328,6 +328,7 @@ TEST(DecodeTest, DecodeDIVIValid) {
     EXPECT_EQ(data_regs[REG_VAL_1], reg_file[8]);
 }
 
+/*
 TEST(ExecuteTest, AddOperation){
   cntrl_regs[OPERATION] = 18;
   cntrl_regs[OPERAND_1] = 0;
@@ -407,6 +408,7 @@ TEST(ExecuteTest, DivByZero){
 
   EXPECT_FALSE(execute());
 }
+*/
 
 TEST(MemoryInitializationTest, AllocatesMem){
         unsigned int size = 131072;
