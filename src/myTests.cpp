@@ -347,6 +347,34 @@ TEST(ExecuteTest, MOVIValid) {
     EXPECT_EQ(reg_file[5], 42);
 }
 
+TEST(ExecuteDecodeTest, MOVValid) {
+    cntrl_regs[OPERATION] = 7; // MOV operation code
+    cntrl_regs[OPERAND_1] = 4; // Destination register (R4)
+    cntrl_regs[OPERAND_2] = 5; // Source register (R5)
+    reg_file[5] = 99;
+
+    ASSERT_TRUE(decode());
+
+    execute();
+
+    EXPECT_EQ(reg_file[4], 99);
+}
+
+TEST(ExecuteDecodeTest, LDAValid) {
+    cntrl_regs[OPERATION] = 9; // LDA operation code
+    cntrl_regs[OPERAND_1] = 6; // Destination register (R6)
+    cntrl_regs[IMMEDIATE] = 12345;
+
+    ASSERT_TRUE(decode());
+
+    execute();
+
+    EXPECT_EQ(reg_file[6], 12345);
+}
+
+
+
+
 /*
 TEST(ExecuteTest, AddOperation){
   cntrl_regs[OPERATION] = 18;
