@@ -112,22 +112,18 @@ TEST(DecodeTest, UninitialzedCntrlRegisters){
   EXPECT_FALSE(decode());
 }
 
-TEST(DecodeTest, HandlesMOVCorrectly) {
-    unsigned int operand2 = 1; // source register
-    unsigned int operand1 = 2; // destination register
-    reg_file[operand1] = 42;
+TEST(DecodeTest, DecodeMOVValid) {
+    cntrl_regs[OPERATION] = 7; // MOV operation code
+    cntrl_regs[OPERAND_1] = 2; // Destination register (R2)
+    cntrl_regs[OPERAND_2] = 3; // Source register (R3)
+    cntrl_regs[OPERAND_3] = 0xFFFFFFFF; // Not used for MOV, set to an example invalid value
+    reg_file[R3] = 3;
 
-    cntrl_regs[OPERATION] = 7; // 7 is MOV opcode
-    cntrl_regs[OPERAND_1] = operand1;
-    cntrl_regs[OPERAND_2] = operand2;
-    cntrl_regs[OPERAND_3] = 0;
+    bool success = decode();
 
-    bool decodeSuccess = decode();
+    ASSERT_TRUE(success);
 
-    EXPECT_TRUE(decodeSuccess);
-    EXPECT_TRUE(isValidRegister(operand1));
-    EXPECT_TRUE(isValidRegister(operand2));
-    EXPECT_EQ(data_regs[REG_VAL_1], reg_file[operand2]);
+    EXPECT_EQ(data_regs[REG_VAL_1], reg_file[R3]);
 }
 
 TEST(ExecuteTest, AddOperation){
