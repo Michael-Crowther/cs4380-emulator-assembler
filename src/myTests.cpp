@@ -525,6 +525,53 @@ TEST(ExecuteDecodeTest, MULIValid) {
     EXPECT_EQ(reg_file[5], 21);
 }
 
+TEST(ExecuteDecodeTest, DIVValid) {
+    cntrl_regs[OPERATION] = 24; // DIV operation code
+    cntrl_regs[OPERAND_1] = 4; // Destination register (R4)
+    cntrl_regs[OPERAND_2] = 1; // Source register 1 (R1)
+    cntrl_regs[OPERAND_3] = 2; // Source register 2 (R2)
+
+    reg_file[1] = 20; // Value in R1
+    reg_file[2] = 5; // Value in R2
+
+    ASSERT_TRUE(decode());
+
+    execute();
+
+    EXPECT_EQ(reg_file[4], 4);
+}
+
+TEST(ExecuteDecodeTest, SDIVValid) {
+    cntrl_regs[OPERATION] = 25; // SDIV operation code
+    cntrl_regs[OPERAND_1] = 5; // Destination register (R5)
+    cntrl_regs[OPERAND_2] = 3; // Source register 1 (R3)
+    cntrl_regs[OPERAND_3] = 4; // Source register 2 (R4)
+
+    reg_file[3] = -20;
+    reg_file[4] = 5;
+
+    ASSERT_TRUE(decode());
+
+    execute();
+
+    EXPECT_EQ(reg_file[5], static_cast<unsigned int>(-4));
+}
+
+TEST(ExecuteDecodeTest, DIVIValid) {
+    cntrl_regs[OPERATION] = 26; // DIVI operation code
+    cntrl_regs[OPERAND_1] = 6; // Destination register (R6)
+    cntrl_regs[OPERAND_2] = 3; // Source register (R3)
+    cntrl_regs[IMMEDIATE] = 4;
+
+    reg_file[3] = 16; // Value in R3
+
+    ASSERT_TRUE(decode());
+
+    execute();
+
+    EXPECT_EQ(reg_file[6], 4);
+}
+
 /*
 TEST(ExecuteTest, AddOperation){
   cntrl_regs[OPERATION] = 18;
