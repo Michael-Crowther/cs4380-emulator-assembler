@@ -272,6 +272,62 @@ TEST(DecodeTest, DecodeSDIVValid) {
     EXPECT_EQ(data_regs[REG_VAL_2], reg_file[15]);
 }
 
+TEST(DecodeTest, DecodeADDIValid) {
+    cntrl_regs[OPERATION] = 19; // ADDI operation code
+    cntrl_regs[OPERAND_1] = 1; // Destination register (R1)
+    cntrl_regs[OPERAND_2] = 2; // Source register (R2)
+    cntrl_regs[IMMEDIATE] = 5;
+
+    reg_file[2] = 20;
+
+    bool success = decode();
+
+    ASSERT_TRUE(success);
+    EXPECT_EQ(data_regs[REG_VAL_1], reg_file[2]);
+}
+
+TEST(DecodeTest, DecodeSUBIValid) {
+    cntrl_regs[OPERATION] = 21; // SUBI operation code
+    cntrl_regs[OPERAND_1] = 3; // Destination register (R3)
+    cntrl_regs[OPERAND_2] = 4; // Source register (R4)
+    cntrl_regs[IMMEDIATE] = 10; // Immediate value to subtract
+
+    reg_file[4] = 30;
+
+    bool success = decode();
+
+    ASSERT_TRUE(success);
+    EXPECT_EQ(data_regs[REG_VAL_1], reg_file[4]);
+}
+
+TEST(DecodeTest, DecodeMULIValid) {
+    cntrl_regs[OPERATION] = 23; // MULI operation code
+    cntrl_regs[OPERAND_1] = 5; // Destination register (R5)
+    cntrl_regs[OPERAND_2] = 6; // Source register (R6)
+    cntrl_regs[IMMEDIATE] = 2;
+
+    reg_file[6] = 15;
+
+    bool success = decode();
+
+    ASSERT_TRUE(success);
+    EXPECT_EQ(data_regs[REG_VAL_1], reg_file[6]);
+}
+
+TEST(DecodeTest, DecodeDIVIValid) {
+    cntrl_regs[OPERATION] = 26; // DIVI operation code
+    cntrl_regs[OPERAND_1] = 7; // Destination register (R7)
+    cntrl_regs[OPERAND_2] = 8; // Source register (R8)
+    cntrl_regs[IMMEDIATE] = 4;
+
+    reg_file[8] = 40;
+
+    bool success = decode();
+
+    ASSERT_TRUE(success);
+    EXPECT_EQ(data_regs[REG_VAL_1], reg_file[8]);
+}
+
 TEST(ExecuteTest, AddOperation){
   cntrl_regs[OPERATION] = 18;
   cntrl_regs[OPERAND_1] = 0;
