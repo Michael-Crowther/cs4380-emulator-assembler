@@ -463,6 +463,37 @@ TEST(ExecuteDecodeTest, ADDIValid) {
     EXPECT_EQ(reg_file[4], 40);
 }
 
+TEST(ExecuteDecodeTest, SUBValid) {
+    cntrl_regs[OPERATION] = 20; // SUB operation code
+    cntrl_regs[OPERAND_1] = 6; // Destination register (R6)
+    cntrl_regs[OPERAND_2] = 3; // Source register 1 (R3)
+    cntrl_regs[OPERAND_3] = 2; // Source register 2 (R2)
+
+    reg_file[3] = 50; // Value in R3
+    reg_file[2] = 20; // Value in R2
+
+    ASSERT_TRUE(decode());
+
+    execute();
+
+    EXPECT_EQ(reg_file[6], 30);
+}
+
+TEST(ExecuteDecodeTest, SUBIValid) {
+    cntrl_regs[OPERATION] = 21; // SUBI operation code
+    cntrl_regs[OPERAND_1] = 7; // Destination register (R7)
+    cntrl_regs[OPERAND_2] = 3; // Source register (R3)
+    cntrl_regs[IMMEDIATE] = 5;
+
+    reg_file[3] = 25; // Value in R3
+
+    ASSERT_TRUE(decode());
+
+    execute();
+
+    EXPECT_EQ(reg_file[7], 20);
+}
+
 /*
 TEST(ExecuteTest, AddOperation){
   cntrl_regs[OPERATION] = 18;
