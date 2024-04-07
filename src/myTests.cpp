@@ -432,6 +432,37 @@ TEST(ExecuteDecodeTest, LDBValid) {
     EXPECT_EQ(reg_file[4], 0x7E);
 }
 
+TEST(ExecuteDecodeTest, ADDValid) {
+    cntrl_regs[OPERATION] = 18; // ADD operation code
+    cntrl_regs[OPERAND_1] = 5; // Destination register (R5)
+    cntrl_regs[OPERAND_2] = 2; // Source register 1 (R2)
+    cntrl_regs[OPERAND_3] = 3; // Source register 2 (R3)
+
+    reg_file[2] = 10; // Value in R2
+    reg_file[3] = 20; // Value in R3
+
+    ASSERT_TRUE(decode());
+
+    execute();
+
+    EXPECT_EQ(reg_file[5], 30);
+}
+
+TEST(ExecuteDecodeTest, ADDIValid) {
+    cntrl_regs[OPERATION] = 19; // ADDI operation code
+    cntrl_regs[OPERAND_1] = 4; // Destination register (R4)
+    cntrl_regs[OPERAND_2] = 2; // Source register (R2)
+    cntrl_regs[IMMEDIATE] = 15;
+
+    reg_file[2] = 25; // Value in R2
+
+    ASSERT_TRUE(decode());
+
+    execute();
+
+    EXPECT_EQ(reg_file[4], 40);
+}
+
 /*
 TEST(ExecuteTest, AddOperation){
   cntrl_regs[OPERATION] = 18;
