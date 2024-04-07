@@ -126,6 +126,46 @@ TEST(DecodeTest, DecodeMOVValid) {
     EXPECT_EQ(data_regs[REG_VAL_1], reg_file[R3]);
 }
 
+TEST(DecodeTest, DecodeMOVIValid) {
+    cntrl_regs[OPERATION] = 8; // MOVI operation code
+    cntrl_regs[OPERAND_1] = 1; // Destination register (R1)
+    cntrl_regs[IMMEDIATE] = 1234;
+
+    bool success = decode();
+
+    ASSERT_TRUE(success);
+}
+
+TEST(DecodeTest, DecodeLDAValid) {
+    cntrl_regs[OPERATION] = 9; // LDA operation code
+    cntrl_regs[OPERAND_1] = 2; // Destination register (R2)
+    cntrl_regs[IMMEDIATE] = 0x00400000;
+
+    bool success = decode();
+
+    ASSERT_TRUE(success);
+}
+
+TEST(DecodeTest, DecodeLDRValid) {
+    cntrl_regs[OPERATION] = 11; // LDR operation code
+    cntrl_regs[OPERAND_1] = 3; // Destination register (R3)
+    cntrl_regs[IMMEDIATE] = 0x00400004;
+
+    bool success = decode();
+
+    ASSERT_TRUE(success);
+}
+
+TEST(DecodeTest, DecodeLDBValid) {
+    cntrl_regs[OPERATION] = 13; // LDB operation code
+    cntrl_regs[OPERAND_1] = 4; // Destination register (R4)
+    cntrl_regs[IMMEDIATE] = 0x00400008;
+
+    bool success = decode();
+
+    ASSERT_TRUE(success);
+}
+
 TEST(ExecuteTest, AddOperation){
   cntrl_regs[OPERATION] = 18;
   cntrl_regs[OPERAND_1] = 0;
