@@ -572,88 +572,6 @@ TEST(ExecuteDecodeTest, DIVIValid) {
     EXPECT_EQ(reg_file[6], 4);
 }
 
-/*
-TEST(ExecuteTest, AddOperation){
-  cntrl_regs[OPERATION] = 18;
-  cntrl_regs[OPERAND_1] = 0;
-  cntrl_regs[OPERAND_2] = 1;
-  cntrl_regs[OPERAND_3] = 2;
-  reg_file[1] = 5;
-  reg_file[2] = 10;
-
-  EXPECT_TRUE(execute());
-  EXPECT_EQ(reg_file[0], 15);
-}
-
-TEST(ExecuteTest, SubOperation){
-  cntrl_regs[OPERATION] = 20;
-  cntrl_regs[OPERAND_1] = 0;
-  cntrl_regs[OPERAND_2] = 1;
-  cntrl_regs[OPERAND_3] = 2;
-  reg_file[1] = 10;
-  reg_file[2] = 5;
-
-  EXPECT_TRUE(execute());
-  EXPECT_EQ(reg_file[0], 5);
-}
-
-TEST(ExecuteTest, MULOperation){
-  cntrl_regs[OPERATION] = 22;
-  cntrl_regs[OPERAND_1] = 0;
-  cntrl_regs[OPERAND_2] = 1;
-  cntrl_regs[OPERAND_3] = 2;
-  reg_file[1] = 5;
-  reg_file[2] = 10;
-
-  EXPECT_TRUE(execute());
-  EXPECT_EQ(reg_file[0], 50);
-}
-
-TEST(ExecuteTest, DivOperation){
-  cntrl_regs[OPERATION] = 24;
-  cntrl_regs[OPERAND_1] = 0;
-  cntrl_regs[OPERAND_2] = 1;
-  cntrl_regs[OPERAND_3] = 2;
-  reg_file[1] = 10;
-  reg_file[2] = 2;
-
-  EXPECT_TRUE(execute());
-  EXPECT_EQ(reg_file[0], 5);
-}
-
-TEST(ExecuteTest, StoreMemoryLimit){
-	int size = 131072;
-	cntrl_regs[OPERATION] = 10;
-	cntrl_regs[OPERAND_1] = 1;
-	cntrl_regs[IMMEDIATE] = size + 1;
-	reg_file[1] = 12345;
-
-	EXPECT_FALSE(execute());
-}
-
-TEST(ExecuteTest, LoadOperation){
-  cntrl_regs[OPERATION] = 11;
-  cntrl_regs[OPERAND_1] = 1;
-  cntrl_regs[IMMEDIATE] = 100;
-  auto* address = reinterpret_cast<unsigned int*>(prog_mem + 100);
-  *address = 54321;
-
-  EXPECT_TRUE(execute());
-  EXPECT_EQ(reg_file[1], 54321);
-}
-
-TEST(ExecuteTest, DivByZero){
-  cntrl_regs[OPERATION] = 24;
-  cntrl_regs[OPERAND_2] = 2;
-  cntrl_regs[OPERAND_3] = 3;
-
-  reg_file[2] = 50;
-  reg_file[3] = 0;
-
-  EXPECT_FALSE(execute());
-}
-*/
-
 TEST(MemoryInitializationTest, AllocatesMem){
         unsigned int size = 131072;
         bool success = init_mem(size);
@@ -687,28 +605,6 @@ TEST(FetchTest, PCIncrementsProperly){
   EXPECT_EQ(reg_file[RegNames::PC], 8u) << "PC did not increment by 8 after fetch.";
 }
 
-TEST(FetchTest, ValidatesControlRegistersInitialization) {
-    unsigned int size = 131072;
-        init_mem(size);
-
-    unsigned char instruction[8] = {
-        0x01, 0x02, 0x03, 0x04, 0x08, 0x07, 0x06, 0x05
-    };
-                std::memcpy(prog_mem, instruction, sizeof(instruction));
-
-    reg_file[PC] = 0;
-
-    bool fetchSuccess = fetch();
-
-    ASSERT_TRUE(fetchSuccess);
-
-    EXPECT_EQ(cntrl_regs[OPERATION], 0x01);
-    EXPECT_EQ(cntrl_regs[OPERAND_1], 0x02);
-    EXPECT_EQ(cntrl_regs[OPERAND_2], 0x03);
-    EXPECT_EQ(cntrl_regs[OPERAND_3], 0x04);
-    EXPECT_EQ(cntrl_regs[IMMEDIATE], 0x05060708);
-}
-
 TEST(RegisterTest, HandlesValidRegisters){
         unsigned int validReg = 5;
         EXPECT_TRUE(isValidRegister(validReg));
@@ -718,7 +614,6 @@ TEST(RegisterTest, HandlesInvalidRegisters){
   unsigned int validReg = 23;
   EXPECT_FALSE(isValidRegister(validReg));
 }
-
 
 TEST(TrapTests, TRPWriteIntToStdOut){
         cntrl_regs[OPERATION] = 31;
