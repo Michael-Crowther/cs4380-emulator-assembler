@@ -166,6 +166,32 @@ TEST(DecodeTest, DecodeLDBValid) {
     ASSERT_TRUE(success);
 }
 
+TEST(DecodeTest, DecodeSTRValid) {
+    cntrl_regs[OPERATION] = 10; // STR operation code
+    cntrl_regs[OPERAND_1] = 5; // Source register (R5)
+    cntrl_regs[IMMEDIATE] = 0x00400010;
+
+    reg_file[5] = 2021;
+
+    bool success = decode();
+
+    ASSERT_TRUE(success);
+    EXPECT_EQ(data_regs[REG_VAL_1], reg_file[5]);
+}
+
+TEST(DecodeTest, DecodeSTBValid) {
+    cntrl_regs[OPERATION] = 12; // STB operation code
+    cntrl_regs[OPERAND_1] = 6; // Source register (R6)
+    cntrl_regs[IMMEDIATE] = 0x00400014;
+
+    reg_file[6] = 0xAABBCCDD;
+
+    bool success = decode();
+
+    ASSERT_TRUE(success);
+    EXPECT_EQ(data_regs[REG_VAL_1], reg_file[6]);
+}
+
 TEST(ExecuteTest, AddOperation){
   cntrl_regs[OPERATION] = 18;
   cntrl_regs[OPERAND_1] = 0;
