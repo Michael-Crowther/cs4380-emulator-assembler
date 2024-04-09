@@ -66,7 +66,6 @@ bool decode(){
 
 	//check validity of operation
 	if(validOperations.find(operation) == validOperations.end()){
-		cout << "invalid operation: " << operation << endl;
 		return false;
 	}
 
