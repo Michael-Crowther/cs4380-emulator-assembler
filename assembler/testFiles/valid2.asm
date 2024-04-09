@@ -6,17 +6,15 @@ CHAR .byt 'A'              ; Initialize a character variable with 'A'
         JMP MAIN          ; Jump to start of the program
 
 ; Main program execution starts
-MAIN   MOV R1, '\r'         ; Clear R1 to start with 0
-        MOV R2, NUM        ; ERROR HERE
-        ADD R1, R1, R2     ; Add NUM to R1, result in R1
+MAIN    MOVI R1, '\r'         
+        LDR R2, NUM        
+        ADD R1, R1, R2     
 
-        MOV R3, CHAR       ; Move ASCII value of 'A' into R3
-        TRP #3             ; Print 'A' on the screen
+        LDR R3, CHAR       
+        TRP #3             
 
-        MOV R4, '\\'         ; Move 1 into R4
-        SUB R2, R2, '\"'     ; Decrement NUM by 1
-        TRP #1             ; Assuming a TRP call to print integer in R2
+        MOVI R4, '\\'         
+        SUBI R2, R2, '\"'     
+        TRP #1             
 
-        ; Assuming TRP #0 halts the program
-        TRP #0             ; Terminate the program
-
+        TRP #0       

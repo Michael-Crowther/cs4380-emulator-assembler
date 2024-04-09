@@ -1,29 +1,29 @@
 JMP MAIN
-                   		MAIN         		  MOV       		       R3   ,     		        #72
+                   		MAIN         		  MOVI       		       R3   ,     		        #72
         TRP #3
-        MOV R3, #101      ; 'e'
+        MOVI R3, #101      ; 'e'
         TRP #3
-        MOV R3, #108      ; 'l'
+        MOVI R3, #108      ; 'l'
         TRP #3
-        MOV R3, #108      ; 'l'
+        MOVI R3, #108      ; 'l'
         TRP #3
-        MOV R3, #111      ; 'o'
+        MOVI R3, #111      ; 'o'
         TRP #3
-        MOV R3, #32       ; ' ' (space)
+        MOVI R3, #32       ; ' ' (space)
         TRP #3
-        MOV R3, #87       ; 'W'
+        MOVI R3, #87       ; 'W'
         TRP #3
-        MOV R3, #111      ; 'o'
+        MOVI R3, #111      ; 'o'
         TRP #3
-        MOV R3, #114      ; 'r'
+        MOVI R3, #114      ; 'r'
         TRP #3
-        MOV R3, #108      ; 'l'
+        MOVI R3, #108      ; 'l'
         TRP #3
-        MOV R3, #100      ; 'd'
+        MOVI R3, #100      ; 'd'
         TRP #3
-        MOV R3, #33       ; '!'
+        MOVI R3, #33       ; '!'
         TRP #3
-        MOV R3, #10       ; '\n' (new line)
+        MOVI R3, #10       ; '\n' (new line)
         TRP #3
 
         ; Terminate Program

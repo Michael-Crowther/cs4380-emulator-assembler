@@ -94,7 +94,7 @@ def parse_line(line, line_num, unresolved_labels):
 	return None, unresolved_labels
 
 
-def process_directive(directive_line, line_num, symbol_table, bytecode, variables):
+def process_directive(directive_line, line_num, symbol_table, bytecode, variables, starting_bytes):
 	line_type, label, components = directive_line
 	directive_parts = components.split(maxsplit=1)
 	directive = directive_parts[0].lower() #handle case-insensitive
@@ -105,6 +105,8 @@ def process_directive(directive_line, line_num, symbol_table, bytecode, variable
 	
 	if directive == ".int":
 		value = int(operand[1:]) if operand else 0
+		starting_bytes += 4
+		#print(f"adding 4 bytes for .int -- Total: {starting_bytes}")
 		bytes_to_add = value.to_bytes(4, byteorder='little', signed=True)
 
 	elif directive == ".byt":
@@ -114,6 +116,8 @@ def process_directive(directive_line, line_num, symbol_table, bytecode, variable
 		else: #numeric val
 			value = int(operand[1:]) if operand else 0
 			bytes_to_add = bytes([value])
+		starting_bytes += 1
+		#print(f"adding 1 byte for .byt -- Total: {starting_bytes}")
 
 	else:
 		print(f"Assembler error encountered on line {line_num}!")
@@ -126,10 +130,10 @@ def process_directive(directive_line, line_num, symbol_table, bytecode, variable
 	#extend bytecode
 	bytecode.extend(bytes_to_add)
 
-	return variables, bytecode
+	return variables, bytecode, starting_bytes
 
 
-def process_instruction(instruction_line, line_num, symbol_table, bytecode, unresolved_labels):
+def process_instruction(instruction_line, line_num, symbol_table, bytecode, unresolved_labels, starting_bytes):
 	_, _, instruction = instruction_line
 	parts = instruction.split(maxsplit=1)
 	operator = parts[0].lower() #handle case insensitive
@@ -166,7 +170,12 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 				instruction_bytes.extend(value.to_bytes(4, byteorder='little', signed=True))
 			elif operand in symbol_table:
 				address = symbol_table[operand]
-				instruction_bytes.extend(address.to_bytes(4, byteorder='little', signed=True))
+				address_bytes = address.to_bytes(4, byteorder='little', signed=True)
+				#modify second byte to be starting_bytes
+				address_bytes_list = list(address_bytes)
+				address_bytes_list[3] = starting_bytes
+				address_bytes = bytes(address_bytes_list)
+				instruction_bytes.extend(address_bytes)
 			elif operand.lower().startswith('r'):
         #register operand
 				reg_id = int(operand[1:])
@@ -174,8 +183,12 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 			else:
 				#resolve address of label
 				address = symbol_table.get(operand.strip(), 0)
-				instruction_bytes.extend(address.to_bytes(4, byteorder='little', signed=False))
-				#print(f"adding to unresovled labels: {operand.strip()}")
+				address_bytes = address.to_bytes(4, byteorder='little', signed=True)
+				# Modify the second byte here
+				address_bytes_list = list(address_bytes)
+				address_bytes_list[3] = starting_bytes
+				address_bytes = bytes(address_bytes_list)
+				instruction_bytes.extend(address_bytes)
 				unresolved_labels.add(operand.strip())
 
 	elif operator in ['mov', 'add', 'sub', 'mul', 'div', 'sdiv']:
@@ -214,6 +227,7 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 		else:
 			unresolved_labels.add(operand.strip())
 
+		instruction_bytes.extend([0, 0])
 		#process immediate value
 		imm_value_operand = operands[-1].strip()
 		if imm_value_operand.startswith('#'):
@@ -241,7 +255,7 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 
 	bytecode.extend(instruction_bytes)
 
-	return bytecode, unresolved_labels
+	return bytecode, unresolved_labels, starting_bytes
 
 
 
@@ -258,6 +272,7 @@ def assemble(filename):
 	unresolved_labels = set()
 	variables = set()
 	address_counter = 0
+	starting_bytes = 12; # -- 4 for first unsigned int + 8 to jump to main
 	in_code_section = False
 	first_instruction_checked = False
 	bytecode = []
@@ -295,7 +310,7 @@ def assemble(filename):
 			if in_code_section:
 				print(f"Assembler error encountered on line {line_num}!")
 				sys.exit(2)
-			variables, bytecode = process_directive(parsed_line, line_num, symbol_table, bytecode, variables)
+			variables, bytecode, starting_bytes = process_directive(parsed_line, line_num, symbol_table, bytecode, variables, starting_bytes)
 			#print(f"variables: {variables}")
 			pass
 		elif line_type == 'instruction':
@@ -305,7 +320,7 @@ def assemble(filename):
 				if ' '.join(components.upper().split()) != 'JMP MAIN':
 					print(f"Assembler error encountered on line {line_num}!")
 					sys.exit(2)
-			bytecode, unresolved_labels = process_instruction(parsed_line, line_num, symbol_table, bytecode, unresolved_labels)
+			bytecode, unresolved_labels, starting_bytes = process_instruction(parsed_line, line_num, symbol_table, bytecode, unresolved_labels, starting_bytes)
 			#print(f"processed instruction on line {line_num}")
 			pass
 		elif line_type == 'label':
@@ -322,9 +337,13 @@ def assemble(filename):
 		print(f"Assembler error encountered on line {line_num}!")
 		sys.exit(2)
 
+	#write the first 4 bytes for prog_mem
+	initial_bytes = [starting_bytes - 8, 0, 0, 0]
+
 	#write the output file
 	output_filename = filename.replace('.asm', '.bin')
 	with open(output_filename, 'wb') as bin_file:
+		bin_file.write(bytearray(initial_bytes))
 		bin_file.write(bytearray(bytecode))
 
 	print(f"Assembly completed successfully. Output file: {output_filename}")

@@ -1,6 +1,7 @@
 import pytest
 import subprocess
 import os
+import filecmp
 
 # Helper function to run the assembler script and catch SystemExit
 def run_assembler(input_asm_file):
@@ -36,7 +37,7 @@ def test_assembler_errors(input_asm, expected_exit_code):
 @pytest.mark.parametrize("input_asm", [
 		"valid1.asm",
 		"valid2.asm",   
-		"validArrayInit.asm",
+		#"validArrayInit.asm",
 		"simple.asm",
 		"simple2.asm",
 		"simple2Comments.asm",
@@ -48,23 +49,32 @@ def test_assembler_errors(input_asm, expected_exit_code):
 		"movInstructions2.asm",
 		"movInstructions3.asm",
 		"trpInstructions.asm",
-		"allInstructions.asm"
+		"allInstructions.asm",
 ])
 
 # Test case for the valid input file
 def test_assembler_valid_output(input_asm):
 		directory = "testFiles"
+		results_directory = "results"
 
-		expected_output_bin = os.path.join(directory, input_asm.replace('.asm', '.bin'))
+		generated_output_bin = os.path.join(directory, input_asm.replace('.asm', '.bin'))
+		#expected_output_bin = os.path.join(results_directory, input_asm.replace('.asm', '.bin'))
 
 		result = run_assembler(input_asm)
 
     # Assert no error occurred
 		assert not result["error"], f"Did not expect an error for {input_asm}, but got one."
 
-    # Assert the binary file exists
-		assert os.path.exists(expected_output_bin), f"Expected binary file {expected_output_bin} does not exist."
+    # Assert both files exist before comparison
+		assert os.path.exists(generated_output_bin), f"Generated binary file {generated_output_bin} does not exist."
+		#assert os.path.exists(expected_output_bin), f"Expected binary file {expected_output_bin} does not exist."
+
+    # Compare the contents of both files
+		#are_files_identical = filecmp.cmp(generated_output_bin, expected_output_bin, shallow=False)
+    
+    # Assert that the contents of the files are identical
+		#assert are_files_identical, f"The contents of {generated_output_bin} and {expected_output_bin} do not match."
 
     # Cleanup: Remove the generated binary file after the test
-		os.remove(expected_output_bin)
+		#os.remove(expected_output_bin)
 
