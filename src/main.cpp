@@ -53,7 +53,7 @@ int main(int argc, char** argv){
 	binaryFile.close();
 
 	//set PC register here
-	reg_file[RegNames::PC] = *reinterpret_cast<unsigned int*>(prog_mem);
+	reg_file[PC] = *reinterpret_cast<unsigned int*>(prog_mem);
 
 	//execution loop
 	bool running = true;
