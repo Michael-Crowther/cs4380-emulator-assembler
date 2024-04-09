@@ -29,7 +29,6 @@ bool init_mem(unsigned int size){
 }
 
 bool fetch(){
-
   if(reg_file[PC] >= memorySize || reg_file[PC] + 7 > memorySize){
     return false;
   }
@@ -57,6 +56,13 @@ bool decode(){
   	unsigned int operand1 = cntrl_regs[OPERAND_1];
   	unsigned int operand2 = cntrl_regs[OPERAND_2];
   	unsigned int operand3 = cntrl_regs[OPERAND_3];
+
+/*	
+	cout << "operation: " << operation << endl;
+	cout << "operand1: " << operand1 << endl;
+	cout << "operand2: " << operand2 << endl;
+	cout << "operand3: " << operand3 << endl;
+*/
 
 	//check validity of operation
 	if(validOperations.find(operation) == validOperations.end()){
@@ -109,7 +115,7 @@ bool decode(){
 		    default:
 		      return false;
 		  }
-		break;
+			break;
 		default:
 			return false;
 			break;
