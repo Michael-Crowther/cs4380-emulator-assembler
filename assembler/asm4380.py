@@ -106,7 +106,7 @@ def process_directive(directive_line, line_num, symbol_table, bytecode, variable
 	if directive == ".int":
 		value = int(operand[1:]) if operand else 0
 		starting_bytes += 4
-		print(f"adding 4 bytes for .int -- Total: {starting_bytes}")
+		#print(f"adding 4 bytes for .int -- Total: {starting_bytes}")
 		bytes_to_add = value.to_bytes(4, byteorder='little', signed=True)
 
 	elif directive == ".byt":
@@ -117,7 +117,7 @@ def process_directive(directive_line, line_num, symbol_table, bytecode, variable
 			value = int(operand[1:]) if operand else 0
 			bytes_to_add = bytes([value])
 		starting_bytes += 1
-		print(f"adding 1 byte for .byt -- Total: {starting_bytes}")
+		#print(f"adding 1 byte for .byt -- Total: {starting_bytes}")
 
 	else:
 		print(f"Assembler error encountered on line {line_num}!")
@@ -333,7 +333,7 @@ def assemble(filename):
 	unresolved_labels -= variables
 	#throw error if any label called in an operand is not a valid function name
 	if len(unresolved_labels) > 0:
-		print(f"{unresolved_labels}")
+		#print(f"{unresolved_labels}")
 		print(f"Assembler error encountered on line {line_num}!")
 		sys.exit(2)
 
