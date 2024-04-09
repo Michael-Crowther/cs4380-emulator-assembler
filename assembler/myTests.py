@@ -36,7 +36,7 @@ def test_assembler_errors(input_asm, expected_exit_code):
 
 @pytest.mark.parametrize("input_asm", [
 		"valid1.asm",
-		#"valid2.asm",   
+		"valid2.asm",   
 		#"validArrayInit.asm",
 		#"simple.asm",
 		"simple2.asm",

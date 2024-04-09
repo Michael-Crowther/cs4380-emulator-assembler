@@ -106,6 +106,7 @@ def process_directive(directive_line, line_num, symbol_table, bytecode, variable
 	if directive == ".int":
 		value = int(operand[1:]) if operand else 0
 		starting_bytes += 4
+		print(f"adding 4 bytes for .int -- Total: {starting_bytes}")
 		bytes_to_add = value.to_bytes(4, byteorder='little', signed=True)
 
 	elif directive == ".byt":
@@ -116,6 +117,7 @@ def process_directive(directive_line, line_num, symbol_table, bytecode, variable
 			value = int(operand[1:]) if operand else 0
 			bytes_to_add = bytes([value])
 		starting_bytes += 1
+		print(f"adding 1 byte for .byt -- Total: {starting_bytes}")
 
 	else:
 		print(f"Assembler error encountered on line {line_num}!")
@@ -128,7 +130,7 @@ def process_directive(directive_line, line_num, symbol_table, bytecode, variable
 	#extend bytecode
 	bytecode.extend(bytes_to_add)
 
-	return variables, bytecode
+	return variables, bytecode, starting_bytes
 
 
 def process_instruction(instruction_line, line_num, symbol_table, bytecode, unresolved_labels, starting_bytes):
@@ -253,7 +255,7 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 
 	bytecode.extend(instruction_bytes)
 
-	return bytecode, unresolved_labels
+	return bytecode, unresolved_labels, starting_bytes
 
 
 
@@ -308,7 +310,7 @@ def assemble(filename):
 			if in_code_section:
 				print(f"Assembler error encountered on line {line_num}!")
 				sys.exit(2)
-			variables, bytecode = process_directive(parsed_line, line_num, symbol_table, bytecode, variables, starting_bytes)
+			variables, bytecode, starting_bytes = process_directive(parsed_line, line_num, symbol_table, bytecode, variables, starting_bytes)
 			#print(f"variables: {variables}")
 			pass
 		elif line_type == 'instruction':
@@ -318,7 +320,7 @@ def assemble(filename):
 				if ' '.join(components.upper().split()) != 'JMP MAIN':
 					print(f"Assembler error encountered on line {line_num}!")
 					sys.exit(2)
-			bytecode, unresolved_labels = process_instruction(parsed_line, line_num, symbol_table, bytecode, unresolved_labels, starting_bytes)
+			bytecode, unresolved_labels, starting_bytes = process_instruction(parsed_line, line_num, symbol_table, bytecode, unresolved_labels, starting_bytes)
 			#print(f"processed instruction on line {line_num}")
 			pass
 		elif line_type == 'label':
