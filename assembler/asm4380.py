@@ -171,7 +171,7 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 				value = int(operand)
 				instruction_bytes.extend(value.to_bytes(4, byteorder='little', signed=True))
 			elif operand in symbol_table:
-				address = symbol_table[operand]
+				address = symbol_table[operand.strip()]
 				address_bytes = address.to_bytes(4, byteorder='little', signed=True)
 				#modify second byte to be starting_bytes
 				address_bytes_list = list(address_bytes)
@@ -182,6 +182,7 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
         #register operand
 				reg_id = int(operand[1:])
 				instruction_bytes.append(reg_id)
+				instruction_bytes.extend([0, 0])
 			else:
 				#resolve address of label
 				address = symbol_table.get(operand.strip(), 0)

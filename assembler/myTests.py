@@ -52,12 +52,12 @@ def test_assembler_errors(input_asm, expected_exit_code):
 		#"allInstructions.asm",
 		#"allInstructions2.asm",
 		#"prog_a.asm",
-		#"prog_b.asm",
+		"prog_b.asm",
 		#"prog_c.asm",
 		#"prog_d.asm",
 		#"prog_e.asm",
-		"newMovInstructions.asm",
-		"cmpInstructions.asm"
+		#"newMovInstructions.asm",
+		#"cmpInstructions.asm"
 ])
 
 # Test case for the valid input file
