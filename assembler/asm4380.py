@@ -26,7 +26,8 @@ def parse_line(line, line_num, unresolved_labels):
 	instruction_keywords = [
     'jmp', 'mov', 'movi', 'lda', 'str', 'ldr', 'stb', 'ldb',
     'add', 'addi', 'sub', 'subi', 'mul', 'muli', 'div',
-    'sdiv', 'divi', 'trp'
+    'sdiv', 'divi', 'trp', 'istr', 'ildr', 'istb', 'ildb', 'jmr',
+		'bnz', 'bgt', 'blt', 'cmp', 'cmpi'
   ]
 
 	words = code.split()
@@ -139,9 +140,10 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 	operator = parts[0].lower() #handle case insensitive
 	operands = parts[1].split(',') if len(parts) > 1 else []
 	opcode_map = {
-		'jmp': 1, 'mov': 7, 'movi': 8, 'lda': 9, 'str': 10, 'ldr': 11, 'stb': 12, 'ldb': 13,
+		'jmp': 1, 'jmr': 2, 'bnz': 3, 'bgt': 4, 'blt': 5, 'mov': 7, 'movi': 8, 'lda': 9, 'str': 10, 'ldr': 11, 'stb': 12, 'ldb': 13,
+		'istr': 14, 'ildr': 15, 'istb': 16, 'ildb': 17,
 		'add': 18, 'addi': 19, 'sub': 20, 'subi': 21, 'mul': 22, 'muli': 23, 'div': 24,
-		'sdiv': 25, 'divi': 26, 'trp': 31
+		'sdiv': 25, 'divi': 26, 'cmp': 29, 'cmpi': 30, 'trp': 31
 	}
 
 	#print(f"got to process instruction")
@@ -157,7 +159,7 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 	instruction_bytes = [opcode_map[operator]]
 	
 	#process operands from instruction type
-	if operator in ['jmp', 'lda', 'str', 'ldr', 'stb', 'ldb']:
+	if operator in ['jmp', 'lda', 'str', 'ldr', 'stb', 'ldb', 'bnz', 'bgt', 'blt', 'cmp']:
 		#print(f"operator: {operator}")
 		#print(f"operands: {operands}")
 		for operand in operands:
@@ -169,7 +171,7 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 				value = int(operand)
 				instruction_bytes.extend(value.to_bytes(4, byteorder='little', signed=True))
 			elif operand in symbol_table:
-				address = symbol_table[operand]
+				address = symbol_table[operand.strip()]
 				address_bytes = address.to_bytes(4, byteorder='little', signed=True)
 				#modify second byte to be starting_bytes
 				address_bytes_list = list(address_bytes)
@@ -180,6 +182,7 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
         #register operand
 				reg_id = int(operand[1:])
 				instruction_bytes.append(reg_id)
+				instruction_bytes.extend([0, 0])
 			else:
 				#resolve address of label
 				address = symbol_table.get(operand.strip(), 0)
@@ -189,9 +192,10 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 				address_bytes_list[3] = starting_bytes
 				address_bytes = bytes(address_bytes_list)
 				instruction_bytes.extend(address_bytes)
-				unresolved_labels.add(operand.strip())
+				if operand.strip() not in symbol_table and not operand.strip().startswith('r'):
+					unresolved_labels.add(operand.strip())
 
-	elif operator in ['mov', 'add', 'sub', 'mul', 'div', 'sdiv']:
+	elif operator in ['mov', 'add', 'sub', 'mul', 'div', 'sdiv', 'jmr', 'istr', 'ildr', 'istb', 'ildb']:
 		for operand in operands:
 			operand = operand.strip()
 			if operand.startswith("'"):
@@ -212,34 +216,53 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 			else:
 				unresolved_labels.add(operand.strip())
 
-	elif operator in ['movi', 'addi', 'subi', 'muli', 'divi']:
-		reg_operand = operands[0].lower()
-		if reg_operand.startswith("'"):
-			instruction_bytes = char_to_ascii(operand, instruction_bytes)
+	elif operator in ['movi', 'addi', 'subi', 'muli', 'divi', 'cmpi']:
+		reg_operand_1 = operands[0].lower()
 
-		elif reg_operand in symbol_table:
-			address = symbol_table.get(operand.strip(), 0)
-			instruction_bytes.extend(address.to_bytes(4, byteorder='little', signed=False))
-
-		elif reg_operand.startswith('r'):
-			reg_id = int(reg_operand[1:])
+		# Handle register operand
+		if reg_operand_1.startswith('r'):
+			reg_id = int(reg_operand_1[1:])
 			instruction_bytes.append(reg_id)
 		else:
-			unresolved_labels.add(operand.strip())
+			print(f"Assembler error encountered on line {line_num}!")  
+			sys.exit(2)
 
-		instruction_bytes.extend([0, 0])
-		#process immediate value
+		reg_operand_2 = operands[1].strip().lower() if len(operands) > 1 else None
+		if reg_operand_2 and reg_operand_2.startswith('r'):
+			reg_id2 = int(reg_operand_2[1:])
+			instruction_bytes.append(reg_id2)
+			instruction_bytes.extend([0])
+		else:
+    	# If there's no second register operand, append a placeholder zero
+			instruction_bytes.extend([0, 0])
+
+		# Initially extend with zeros to later fill with immediate value
+		instruction_bytes.extend([0, 0, 0, 0])
+
+    # Handle immediate value operand
 		imm_value_operand = operands[-1].strip()
+
 		if imm_value_operand.startswith('#'):
 			imm_value_operand = imm_value_operand[1:]
+
+    # If operand is a digit or negative digit, treat as immediate literal
 		if imm_value_operand.isdigit() or (imm_value_operand.startswith('-') and imm_value_operand[1:].isdigit()):
 			imm_value = int(imm_value_operand)
-			instruction_bytes.extend(imm_value.to_bytes(4, byteorder='little', signed=True))
+			instruction_bytes[-4:] = imm_value.to_bytes(4, byteorder='little', signed=True)
+
+    # If operand starts with a quote, treat as character
 		elif imm_value_operand.startswith("'"):
-			instruction_bytes = char_to_ascii(imm_value_operand, instruction_bytes)
+			instruction_bytes[-4:] = char_to_ascii(imm_value_operand, [])
+
+    # If operand is in the symbol table, treat as variable label
+		elif imm_value_operand in symbol_table:
+			# Fetch value or address associated with label
+			value_or_address = symbol_table[imm_value_operand] + 4
+			instruction_bytes[-4:] = value_or_address.to_bytes(4, byteorder='little', signed=False)
+
+		# If operand is unrecognized, it's unresolved
 		else:
-			print(f"Assembler error encountered on line {line_num}!")
-			sys.exit(2)
+			unresolved_labels.add((imm_value_operand, len(instruction_bytes) - 4))
 
 	elif operator == 'trp':
 		if len(operands) == 0:
@@ -334,6 +357,7 @@ def assemble(filename):
 	#throw error if any label called in an operand is not a valid function name
 	if len(unresolved_labels) > 0:
 		#print(f"{unresolved_labels}")
+		#print(f"{symbol_table}")
 		print(f"Assembler error encountered on line {line_num}!")
 		sys.exit(2)
 
