@@ -159,7 +159,7 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 	instruction_bytes = [opcode_map[operator]]
 	
 	#process operands from instruction type
-	if operator in ['jmp', 'lda', 'str', 'ldr', 'stb', 'ldb', 'bnz', 'bgt', 'blt']:
+	if operator in ['jmp', 'lda', 'str', 'ldr', 'stb', 'ldb', 'bnz', 'bgt', 'blt', 'cmp']:
 		#print(f"operator: {operator}")
 		#print(f"operands: {operands}")
 		for operand in operands:
@@ -191,7 +191,8 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 				address_bytes_list[3] = starting_bytes
 				address_bytes = bytes(address_bytes_list)
 				instruction_bytes.extend(address_bytes)
-				unresolved_labels.add(operand.strip())
+				if operand.strip() not in symbol_table and not operand.strip().startswith('r'):
+					unresolved_labels.add(operand.strip())
 
 	elif operator in ['mov', 'add', 'sub', 'mul', 'div', 'sdiv', 'jmr', 'istr', 'ildr', 'istb', 'ildb']:
 		for operand in operands:
@@ -214,7 +215,7 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 			else:
 				unresolved_labels.add(operand.strip())
 
-	elif operator in ['movi', 'addi', 'subi', 'muli', 'divi', 'cmp', 'cmpi']:
+	elif operator in ['movi', 'addi', 'subi', 'muli', 'divi', 'cmpi']:
 		reg_operand_1 = operands[0].lower()
 
 		# Handle register operand
@@ -355,6 +356,7 @@ def assemble(filename):
 	#throw error if any label called in an operand is not a valid function name
 	if len(unresolved_labels) > 0:
 		#print(f"{unresolved_labels}")
+		#print(f"{symbol_table}")
 		print(f"Assembler error encountered on line {line_num}!")
 		sys.exit(2)
 

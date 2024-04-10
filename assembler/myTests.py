@@ -56,7 +56,8 @@ def test_assembler_errors(input_asm, expected_exit_code):
 		#"prog_c.asm",
 		#"prog_d.asm",
 		#"prog_e.asm",
-		"newMovInstructions.asm"
+		"newMovInstructions.asm",
+		"cmpInstructions.asm"
 ])
 
 # Test case for the valid input file
