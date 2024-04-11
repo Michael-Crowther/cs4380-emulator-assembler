@@ -187,11 +187,15 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 				#resolve address of label
 				address = symbol_table.get(operand.strip(), 0)
 				address_bytes = address.to_bytes(4, byteorder='little', signed=True)
-				# Modify the second byte here
-				address_bytes_list = list(address_bytes)
-				address_bytes_list[3] = starting_bytes
-				address_bytes = bytes(address_bytes_list)
-				instruction_bytes.extend(address_bytes)
+        # Modify the second byte here
+				if operator == 'jmp':
+					address_bytes_list = list(address_bytes)
+					address_bytes_list[3] = starting_bytes
+					address_bytes = bytes(address_bytes_list)
+					instruction_bytes.extend(address_bytes)
+          #print(f"adding {address_bytes_list} for {operator}")
+				else:
+					instruction_bytes.extend(address_bytes)
 				if operand.strip() not in symbol_table and not operand.strip().startswith('r'):
 					unresolved_labels.add(operand.strip())
 
