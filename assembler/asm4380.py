@@ -330,7 +330,7 @@ def assemble(filename):
 					sys.exit(2)
 
 		if label:
-			symbol_table[label] = address_counter
+			symbol_table[label] = address_counter - 16
 		address_counter += 8
 
 		if line_type == 'directive':
