@@ -182,16 +182,21 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
         #register operand
 				reg_id = int(operand[1:])
 				instruction_bytes.append(reg_id)
+				#print(f"adding {reg_id} for {operator}")
 				instruction_bytes.extend([0, 0])
 			else:
 				#resolve address of label
 				address = symbol_table.get(operand.strip(), 0)
 				address_bytes = address.to_bytes(4, byteorder='little', signed=True)
 				# Modify the second byte here
-				address_bytes_list = list(address_bytes)
-				address_bytes_list[3] = starting_bytes
-				address_bytes = bytes(address_bytes_list)
-				instruction_bytes.extend(address_bytes)
+				if operator == 'jmp':
+					address_bytes_list = list(address_bytes)
+					address_bytes_list[3] = starting_bytes
+					address_bytes = bytes(address_bytes_list)
+					instruction_bytes.extend(address_bytes)
+					#print(f"adding {address_bytes_list} for {operator}")
+				else:
+					instruction_bytes.extend(address_bytes)
 				if operand.strip() not in symbol_table and not operand.strip().startswith('r'):
 					unresolved_labels.add(operand.strip())
 
@@ -245,7 +250,6 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 		if imm_value_operand.startswith('#'):
 			imm_value_operand = imm_value_operand[1:]
 
-    # If operand is a digit or negative digit, treat as immediate literal
 		if imm_value_operand.isdigit() or (imm_value_operand.startswith('-') and imm_value_operand[1:].isdigit()):
 			imm_value = int(imm_value_operand)
 			instruction_bytes[-4:] = imm_value.to_bytes(4, byteorder='little', signed=True)
