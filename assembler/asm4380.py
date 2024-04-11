@@ -188,6 +188,7 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 				#resolve address of label
 				address = symbol_table.get(operand.strip(), 0)
 				address_bytes = address.to_bytes(4, byteorder='little', signed=True)
+				
 				# Modify the second byte here
 				if operator == 'jmp':
 					address_bytes_list = list(address_bytes)
@@ -330,7 +331,7 @@ def assemble(filename):
 					sys.exit(2)
 
 		if label:
-			symbol_table[label] = address_counter
+			symbol_table[label] = address_counter - 16
 		address_counter += 8
 
 		if line_type == 'directive':
