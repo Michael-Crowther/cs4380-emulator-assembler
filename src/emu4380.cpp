@@ -15,7 +15,7 @@ unsigned int cntrl_regs[num_cntrl_regs];
 unsigned int data_regs[num_data_regs];
 Cache* globalCache = nullptr;
 unsigned int mem_cycle_cntr = 0;
-static const unordered_set<unsigned int> validOperations = {1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 31};
+static const unordered_set<unsigned int> validOperations = {1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40};
 
 void init_cache(unsigned int cacheType){
   delete globalCache; //cleanup existing cache if any
@@ -679,6 +679,8 @@ bool decode(){
 
 	switch(operation){
 		case 1: //JMP
+		case 39: //CALL
+		case 40: //RET
 			break;
 		case 7: //MOV
 			if(!isValidRegister(operand1) || !isValidRegister(operand2)) return false;
@@ -688,6 +690,10 @@ bool decode(){
 		case 9: //LDA
 		case 11: //LDR
 		case 13: //LDB
+		case 37: //POPR
+		case 38: //POPB
+		case 32: //ALCI
+		case 33: //ALLC
 			if(!isValidRegister(operand1)) return false;
 			break;
 		case 10: //STR
@@ -696,6 +702,8 @@ bool decode(){
 		case 3: //BNZ
 		case 4: //BGT
 		case 5: //BLT
+		case 35: //PSHR
+		case 36: //PSHB
 			if (!isValidRegister(operand1)) return false;
       			data_regs[REG_VAL_1] = reg_file[operand1];
       			break;
@@ -709,6 +717,8 @@ bool decode(){
 		case 22: //MUL
 		case 24: //DIV
 		case 25: //SDIV
+		case 27: //AND
+		case 28: //OR
 		case 29: //CMP
 			if(!isValidRegister(operand1) || !isValidRegister(operand2) || !isValidRegister(operand3)) return false;
 			data_regs[REG_VAL_1] = reg_file[operand2]; //RS1
@@ -721,6 +731,7 @@ bool decode(){
 		case 23: //MULI
 		case 26: //DIVI
 		case 30: //CMPI
+		case 34: //IALLC
 			if(!isValidRegister(operand1) || !isValidRegister(operand2)) return false;
       			data_regs[REG_VAL_1] = reg_file[operand2]; //RS1
       			break;
@@ -731,6 +742,8 @@ bool decode(){
 		    case 2:
 		    case 3:
 		    case 4:
+				case 5:
+				case 6:
 		    case 98:
 		      break;
 		    default:
@@ -858,6 +871,12 @@ bool execute(){
 			if(immediate == 0) return false;
 			reg_file[operand1] = static_cast<unsigned int>(static_cast<int>(data_regs[REG_VAL_1]) / static_cast<int>(immediate)); //Divide RS1 by Imm (signed), result in RD.
 			break;
+		case 27: //ADD
+			reg_file[operand1] = (data_regs[REG_VAL_1] != 0 && data_regs[REG_VAL_2] != 0) ? 1 : 0; //logical && on RS1 and RS2
+			break;
+		case 28: //OR
+			reg_file[operand1] = (data_regs[REG_VAL_1] != 0 || data_regs[REG_VAL_2] != 0) ? 1 : 0; //logical || on RS1 and RS2
+			break;
 		case 29: //CMP
 			if(data_regs[REG_VAL_1] == data_regs[REG_VAL_2]){
 				reg_file[operand1] = 0;
@@ -880,6 +899,50 @@ bool execute(){
         reg_file[operand1] = -1;
       }
 			break;
+		case 35: //PSHR
+			reg_file[SP] -= 4;
+			globalCache->writeWord(reg_file[SP], data_regs[REG_VAL_1]); //push word onto the stack
+			break;
+		case 36: //PSHB
+			reg_file[SP] -= 1;
+			globalCache->writeByte(reg_file[SP], static_cast<unsigned char>(data_regs[REG_VAL_1] & 0xFF));
+			break;
+		case 37: //POPR
+			reg_file[operand1] = globalCache->readWord(reg_file[SP]);
+    	reg_file[SP] += 4;
+    	break;
+		case 38: //POPB
+			reg_file[operand1] = globalCache->readByte(reg_file[SP]);
+    	reg_file[SP] += 1;
+    	break;
+		case 39: //CALL
+			reg_file[SP] -= 4;
+    	globalCache->writeWord(reg_file[SP], reg_file[PC]);
+    	reg_file[PC] = prog_mem[reg_file[operand1]];
+    	break;
+		case 40: //RET
+			reg_file[PC] = globalCache->readWord(reg_file[SP]);
+    	reg_file[SP] += 4;
+    	break;
+		case 32: //ALCI
+			reg_file[operand1] = reg_file[HP];
+   		reg_file[HP] += immediate;
+    	break;
+		case 33: //ALLC
+			{
+        unsigned int size = globalCache->readWord(immediate);
+        reg_file[operand1] = reg_file[HP];
+        reg_file[HP] += size;
+    	}
+    	break;
+		case 34: //IALLC
+			{
+        unsigned int addr = data_regs[REG_VAL_1];
+        unsigned int size = globalCache->readWord(addr);
+        reg_file[operand1] = reg_file[HP];
+        reg_file[HP] += size;
+    	}
+    	break;
 		case 31: //TRP
 			switch(operand1){
 				case 0: //STOP-Exit
@@ -899,6 +962,28 @@ bool execute(){
 					break;
 				case 4: //Read a char into R3 from stdin
 					reg_file[R3] = static_cast<unsigned int>(cin.get());
+					break;
+				case 5: //null terminated Pascal-style string
+					{	
+						unsigned char length = prog_mem[reg_file[R3]];
+        		for(int i = 1; i <= length; ++i) {
+            	cout << static_cast<char>(prog_mem[reg_file[R3] + i]);
+        		}
+					}
+					break;
+				case 6: //read newline terminated string from stdin
+					{
+        		string input;
+        		getline(cin, input); // Read until newline
+        		if (input.size() > 255) {
+            	input = input.substr(0, 255); // don't exceed 255 characters, typical limit for Pascal-style strings
+        		}
+        		prog_mem[reg_file[R3]] = static_cast<unsigned char>(input.size()); // store length at the starting address
+        		for (size_t i = 0; i < input.size(); ++i) {
+            	prog_mem[reg_file[R3] + i + 1] = input[i]; // Store characters after the length
+        		}
+        		prog_mem[reg_file[R3] + input.size() + 1] = '\0'; // Append null character
+    			}
 					break;
 				case 98: //Print all registers to stdout
 					for(size_t i = 0; i <= 15; ++i){
