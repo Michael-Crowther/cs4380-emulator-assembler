@@ -35,7 +35,7 @@ def test_assembler_errors(input_asm, expected_exit_code):
     assert result["exit_code"] == expected_exit_code, f"Expected exit code {expected_exit_code} for {input_asm}, but got {result['exit_code']}."
 
 @pytest.mark.parametrize("input_asm", [
-		#"valid1.asm",
+		"valid1.asm",
 		#"valid2.asm",   
 		#"validArrayInit.asm",
 		#"simple.asm",
@@ -52,12 +52,12 @@ def test_assembler_errors(input_asm, expected_exit_code):
 		#"allInstructions.asm",
 		#"allInstructions2.asm",
 		#"prog_a.asm",
-		#"prog_b.asm",
-		"prog_c.asm",
+		"prog_b.asm",
+		#"prog_c.asm",
 		#"prog_d.asm",
 		#"prog_e.asm",
-		#"newMovInstructions.asm",
-		#"cmpInstructions.asm"
+		"newMovInstructions.asm",
+		"cmpInstructions.asm"
 ])
 
 # Test case for the valid input file

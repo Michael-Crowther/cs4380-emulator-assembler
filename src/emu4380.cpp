@@ -659,7 +659,7 @@ bool fetch(){
 
 
 bool decode(){
-	//	cout << "decode" << endl;
+	//cout << "decode" << endl;
   	unsigned int operation = cntrl_regs[OPERATION];
   	unsigned int operand1 = cntrl_regs[OPERAND_1];
   	unsigned int operand2 = cntrl_regs[OPERAND_2];
@@ -746,13 +746,13 @@ bool decode(){
 
 
 bool execute(){
-//	cout << "execute" << endl;
+//cout << "execute" << endl;
 	unsigned int operation = cntrl_regs[OPERATION];
 	unsigned int operand1 = cntrl_regs[OPERAND_1];
 	unsigned int operand2 = cntrl_regs[OPERAND_2];
 	unsigned int operand3 = cntrl_regs[OPERAND_3];
 	unsigned int immediate = cntrl_regs[IMMEDIATE];
-
+		
 	switch(operation){
 		case 1: //JMP
 			reg_file[PC] = immediate; //jump to address of immediate

@@ -159,7 +159,7 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 	instruction_bytes = [opcode_map[operator]]
 	
 	#process operands from instruction type
-	if operator in ['jmp', 'lda', 'str', 'ldr', 'stb', 'ldb', 'bnz', 'bgt', 'blt', 'cmp']:
+	if operator in ['jmp', 'lda', 'str', 'ldr', 'stb', 'ldb', 'bnz', 'bgt', 'blt']:
 		#print(f"operator: {operator}")
 		#print(f"operands: {operands}")
 		for operand in operands:
@@ -190,18 +190,20 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 				address_bytes = address.to_bytes(4, byteorder='little', signed=True)
 				
 				# Modify the second byte here
-				if operator == 'jmp':
+				if operator in ['jmp']:
 					address_bytes_list = list(address_bytes)
 					address_bytes_list[3] = starting_bytes
 					address_bytes = bytes(address_bytes_list)
 					instruction_bytes.extend(address_bytes)
 					#print(f"adding {address_bytes_list} for {operator}")
 				else:
+					#print(f"adding bytes for {operator}: {address}")
+					#print(f"symbol table: {symbol_table}")
 					instruction_bytes.extend(address_bytes)
 				if operand.strip() not in symbol_table and not operand.strip().startswith('r'):
 					unresolved_labels.add(operand.strip())
 
-	elif operator in ['mov', 'add', 'sub', 'mul', 'div', 'sdiv', 'jmr', 'istr', 'ildr', 'istb', 'ildb']:
+	elif operator in ['mov', 'add', 'sub', 'mul', 'div', 'sdiv', 'jmr', 'istr', 'ildr', 'istb', 'ildb', 'cmp']:
 		for operand in operands:
 			operand = operand.strip()
 			if operand.startswith("'"):
@@ -299,7 +301,7 @@ def assemble(filename):
 	symbol_table = {}
 	unresolved_labels = set()
 	variables = set()
-	address_counter = 0
+	instructions_processed = 0
 	starting_bytes = 12; # -- 4 for first unsigned int + 8 to jump to main
 	in_code_section = False
 	first_instruction_checked = False
@@ -331,8 +333,7 @@ def assemble(filename):
 					sys.exit(2)
 
 		if label:
-			symbol_table[label] = address_counter - 16
-		address_counter += 8
+			symbol_table[label] = starting_bytes - 8
 
 		if line_type == 'directive':
 			if in_code_section:
@@ -349,7 +350,8 @@ def assemble(filename):
 					print(f"Assembler error encountered on line {line_num}!")
 					sys.exit(2)
 			bytecode, unresolved_labels, starting_bytes = process_instruction(parsed_line, line_num, symbol_table, bytecode, unresolved_labels, starting_bytes)
-			#print(f"processed instruction on line {line_num}")
+			starting_bytes += 8
+			instructions_processed += 1
 			pass
 		elif line_type == 'label':
 			pass
@@ -367,7 +369,7 @@ def assemble(filename):
 		sys.exit(2)
 
 	#write the first 4 bytes for prog_mem
-	initial_bytes = [starting_bytes - 8, 0, 0, 0]
+	initial_bytes = [starting_bytes - 8 - instructions_processed * 8, 0, 0, 0]
 
 	#write the output file
 	output_filename = filename.replace('.asm', '.bin')
