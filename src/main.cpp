@@ -66,8 +66,17 @@ int main(int argc, char** argv){
  	binaryFile.read(reinterpret_cast<char*>(prog_mem), memorySize);
 	binaryFile.close();
 
-	//set PC register here
-	reg_file[RegNames::PC] = *reinterpret_cast<unsigned int*>(prog_mem);
+	//set PC
+	reg_file[PC] = *reinterpret_cast<unsigned int*>(prog_mem);
+
+	//set SB
+	reg_file[SB] = memorySize - 1;
+
+	//set SL
+	reg_file[SL] = fileSize;
+
+	//set SP
+  reg_file[SP] = memorySize - 1;
 
 	//execution loop
 	bool running = true;

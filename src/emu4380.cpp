@@ -621,6 +621,15 @@ void TwoWaySetAssociativeCache::init(unsigned int cacheType) {
 }
 
 
+bool safeUpdateSP(int increment){
+	unsigned int newSP = reg_file[SP] + increment;
+
+	if(newSP > reg_file[SB] || newSP < reg_file[SL]){
+		return false;
+	}
+	return true;
+}
+
 bool isValidRegister(unsigned int reg){
   return reg < num_gen_regs;
 };
@@ -900,28 +909,34 @@ bool execute(){
       }
 			break;
 		case 35: //PSHR
+			if(!safeUpdateSP(-4)) return false;
 			reg_file[SP] -= 4;
 			globalCache->writeWord(reg_file[SP], data_regs[REG_VAL_1]); //push word onto the stack
 			break;
 		case 36: //PSHB
+			if(!safeUpdateSP(-1)) return false;
 			reg_file[SP] -= 1;
 			globalCache->writeByte(reg_file[SP], static_cast<unsigned char>(data_regs[REG_VAL_1] & 0xFF));
 			break;
 		case 37: //POPR
 			reg_file[operand1] = globalCache->readWord(reg_file[SP]);
+			if(!safeUpdateSP(4)) return false;
     	reg_file[SP] += 4;
     	break;
 		case 38: //POPB
 			reg_file[operand1] = globalCache->readByte(reg_file[SP]);
+			if(!safeUpdateSP(1)) return false;
     	reg_file[SP] += 1;
     	break;
 		case 39: //CALL
+			if(!safeUpdateSP(-4)) return false;
 			reg_file[SP] -= 4;
     	globalCache->writeWord(reg_file[SP], reg_file[PC]);
     	reg_file[PC] = prog_mem[reg_file[operand1]];
     	break;
 		case 40: //RET
 			reg_file[PC] = globalCache->readWord(reg_file[SP]);
+			if(!safeUpdateSP(4)) return false;
     	reg_file[SP] += 4;
     	break;
 		case 32: //ALCI
