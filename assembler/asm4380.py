@@ -22,7 +22,7 @@ def parse_line(line, line_num, unresolved_labels, symbol_table, bytecode, starti
 	#print(f"code: {code}")
 
 	#check for multiple directives and instructions on one line
-	directive_keywords = ['.byt', '.int']
+	directive_keywords = ['.byt', '.int', '.bts', '.str']
 	instruction_keywords = [
     'jmp', 'mov', 'movi', 'lda', 'str', 'ldr', 'stb', 'ldb',
     'add', 'addi', 'sub', 'subi', 'mul', 'muli', 'div',
@@ -68,8 +68,9 @@ def parse_line(line, line_num, unresolved_labels, symbol_table, bytecode, starti
 		for label, address_pos in unresolved_labels.items():
 			if label != 'main':
 				address = starting_bytes - 8
-				address_bytes = address.to_bytes(1, byteorder='little', signed=True)
-				bytecode[address_pos - 4] = address_bytes[0]
+				#print(f"address converting: {address} for: {label}")
+				address_bytes = address.to_bytes(2, byteorder='little', signed=True)
+				bytecode[address_pos - 7] = address_bytes[0]
 		   
 
 		unresolved_labels.pop(label)
@@ -130,6 +131,29 @@ def process_directive(directive_line, line_num, symbol_table, bytecode, variable
 			bytes_to_add = bytes([value])
 		starting_bytes += 1
 		#print(f"adding 1 byte for .byt -- Total: {starting_bytes}")
+
+	elif directive == ".bts":
+		size = int(operand[1:]) if operand else 0
+		bytes_to_add = bytes([0] * size)  # Allocate space initialized to zero
+		starting_bytes += size
+
+	elif directive == '.str':
+		if operand.startswith('"') or operand.startswith("'"):
+    # Remove the quotes and handle escape characters
+			string_value = eval(operand)
+			length = len(string_value)
+			if length > 255:
+				print(f"Assembler error encountered on line {line_num}!")
+				sys.exit(2)
+			bytes_to_add = bytes([length]) + string_value.encode() + bytes([0])
+		else:
+    # Numeric literal handling
+			numeric_value = int(operand[1:]) if operand else 0
+			if numeric_value > 255:
+				print(f"Assembler error encountered on line {line_num}!")
+				sys.exit(2)
+			bytes_to_add = bytes([numeric_value] + [0] * (numeric_value + 1))
+		starting_bytes += len(bytes_to_add)
 
 	else:
 		print(f"Assembler error encountered on line {line_num}!")
@@ -217,7 +241,7 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 				if operand.strip() not in symbol_table and operand.strip() not in register_map:
 					unresolved_labels[operand.strip()] = len(bytecode) + 8
 
-	elif operator in ['mov', 'add', 'sub', 'mul', 'div', 'sdiv', 'jmr', 'istr', 'ildr', 'istb', 'ildb', 'cmp', 'and', 'or', 'pshr', 'pshb']:
+	elif operator in ['mov', 'add', 'sub', 'mul', 'div', 'sdiv', 'jmr', 'istr', 'ildr', 'istb', 'ildb', 'cmp', 'and', 'or', 'pshr', 'pshb', 'iallc']:
 		for operand in operands:
 			operand = operand.strip()
 			if operand.startswith("'"):
@@ -237,7 +261,7 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 				#print(f"adding unresolved label: {operand.strip()}")
 				unresolved_labels[operand.strip()] = len(instruction_bytes)
 
-	elif operator in ['movi', 'addi', 'subi', 'muli', 'divi', 'cmpi']:
+	elif operator in ['movi', 'addi', 'subi', 'muli', 'divi', 'cmpi', 'alci', 'allc']:
 		reg_operand_1 = operands[0].strip().lower()
 		# Handle register operand
 		if reg_operand_1 in register_map:
