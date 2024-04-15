@@ -65,13 +65,11 @@ def parse_line(line, line_num, unresolved_labels, symbol_table, bytecode, starti
 		#print(f"removing unresolved_label: {label}")
  
 		# resolve label of later found function call
-		for label, address_pos in unresolved_labels.items():
-			if label != 'main':
-				address = starting_bytes - 8
-				#print(f"address converting: {address} for: {label}")
-				address_bytes = address.to_bytes(2, byteorder='little', signed=True)
-				bytecode[address_pos - 7] = address_bytes[0]
-		   
+		if label != 'main':
+			address_pos = unresolved_labels[label]
+			address = starting_bytes - 8
+			address_bytes = address.to_bytes(2, byteorder='little', signed=True)
+			bytecode[address_pos - 7:address_pos - 7 + len(address_bytes)] = address_bytes
 
 		unresolved_labels.pop(label)
 		#check if there is more after label
@@ -211,10 +209,6 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 			elif operand in symbol_table:
 				address = symbol_table[operand.strip()]
 				address_bytes = address.to_bytes(4, byteorder='little', signed=True)
-				#modify second byte to be starting_bytes
-				address_bytes_list = list(address_bytes)
-				address_bytes_list[3] = starting_bytes
-				address_bytes = bytes(address_bytes_list)
 				instruction_bytes.extend(address_bytes)
 			if operand in register_map:
 				reg_id = register_map[operand]
@@ -227,18 +221,16 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 				address = symbol_table.get(operand.strip(), 0)
 				address_bytes = address.to_bytes(4, byteorder='little', signed=True)
 				
-				# Modify the second byte here
+				# Modify the fourth byte here
 				if operator in ['jmp']:
-					address_bytes_list = list(address_bytes)
-					address_bytes_list[3] = starting_bytes
-					address_bytes = bytes(address_bytes_list)
-					instruction_bytes.extend(address_bytes)
-					#print(f"adding {address_bytes_list} for {operator}")
+					starting_bytes_array = starting_bytes.to_bytes(4, byteorder='little', signed=True)
+					instruction_bytes.extend([0, 0, 0])
+					instruction_bytes.extend(starting_bytes_array)
+					#instruction_bytes.extend(address_bytes)
 				else:
-					#print(f"adding bytes for {operator}: {address}")
-					#print(f"symbol table: {symbol_table}")
 					instruction_bytes.extend(address_bytes)
 				if operand.strip() not in symbol_table and operand.strip() not in register_map:
+					#print(f"adding to unresolved_labels on line 235: {operand.strip()} for line_num: {line_num}")
 					unresolved_labels[operand.strip()] = len(bytecode) + 8
 
 	elif operator in ['mov', 'add', 'sub', 'mul', 'div', 'sdiv', 'jmr', 'istr', 'ildr', 'istb', 'ildb', 'cmp', 'and', 'or', 'pshr', 'pshb', 'iallc']:
@@ -305,7 +297,8 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 
 		# If operand is unrecognized, it's unresolved
 		else:
-			unresolved_labels.add((imm_value_operand, len(instruction_bytes) - 4))
+			print(f"adding to unresolved_labels on 302: {imm_value_operand} on line_num: {line_num}")
+			unresolved_labels[imm_value_operand] = len(instruction_bytes) - 4
 
 	elif operator == 'trp':
 		if len(operands) == 0:
@@ -401,8 +394,9 @@ def assemble(filename):
 	for label in to_remove:
 		del unresolved_labels[label]
 	#throw error if any label called in an operand is not a valid function name
+	print(f"{symbol_table} on line 397")
 	if len(unresolved_labels) > 0:
-		print(f"{unresolved_labels}")
+		#print(f"{unresolved_labels}")
 		#print(f"{symbol_table}")
 		print(f"Assembler error encountered on line {line_num}!")
 		sys.exit(2)

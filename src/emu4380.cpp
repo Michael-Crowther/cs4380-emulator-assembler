@@ -15,7 +15,7 @@ unsigned int cntrl_regs[num_cntrl_regs];
 unsigned int data_regs[num_data_regs];
 Cache* globalCache = nullptr;
 unsigned int mem_cycle_cntr = 0;
-static const unordered_set<unsigned int> validOperations = {1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40};
+static const unordered_set<unsigned int> validOperations = {1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40};
 
 void init_cache(unsigned int cacheType){
   delete globalCache; //cleanup existing cache if any
@@ -674,12 +674,13 @@ bool decode(){
   	unsigned int operand2 = cntrl_regs[OPERAND_2];
   	unsigned int operand3 = cntrl_regs[OPERAND_3];
 
-/*	
+	
+	/*
 	cout << "operation: " << operation << endl;
 	cout << "operand1: " << operand1 << endl;
 	cout << "operand2: " << operand2 << endl;
 	cout << "operand3: " << operand3 << endl;
-*/
+	*/
 
 	//check validity of operation
 	if(validOperations.find(operation) == validOperations.end()){
@@ -754,6 +755,7 @@ bool decode(){
 				case 5:
 				case 6:
 		    case 98:
+					data_regs[REG_VAL_1] = reg_file[operand1];
 		      break;
 		    default:
 		      return false;
@@ -917,6 +919,7 @@ bool execute(){
 			if(!safeUpdateSP(-1)) return false;
 			reg_file[SP] -= 1;
 			globalCache->writeByte(reg_file[SP], static_cast<unsigned char>(data_regs[REG_VAL_1] & 0xFF));
+
 			break;
 		case 37: //POPR
 			reg_file[operand1] = globalCache->readWord(reg_file[SP]);
