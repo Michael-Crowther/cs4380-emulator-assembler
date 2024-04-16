@@ -29,7 +29,7 @@ bool init_mem(unsigned int size){
 }
 
 bool fetch(){
-  if(reg_file[PC] >= memorySize || reg_file[PC] + 7 > memorySize || reg_file[PC] < 0){
+  if(reg_file[PC] >= memorySize || reg_file[PC] + 8 > memorySize || reg_file[PC] < 0){
     return false;
   }
 	
@@ -90,9 +90,12 @@ bool decode(){
 			if(!isValidRegister(operand1)) return false;
 			break;
 		case 10: //STR
+			if (!isValidRegister(operand1)) return false;
+            data_regs[REG_VAL_1] = reg_file[operand1];
+            break;
 		case 12: //STB
 			if (!isValidRegister(operand1)) return false;
-      			data_regs[REG_VAL_1] = reg_file[operand1];
+      			data_regs[REG_VAL_1] = reg_file[operand1] & 0xFF;
       			break;
 		case 18: //ADD
 		case 20: //SUB
@@ -162,7 +165,7 @@ bool execute(){
 			break;
 		case 12: //STB
 			if(immediate >= memorySize) return false;
-			prog_mem[immediate] = static_cast<unsigned char>(data_regs[REG_VAL_1] & 0xFF); //store least significant byte in RS at Address
+			prog_mem[immediate] = static_cast<unsigned char>(data_regs[REG_VAL_1]); //store least significant byte in RS at Address
 			break;
 		case 13: //LDB
 			if(immediate >= memorySize) return false;
