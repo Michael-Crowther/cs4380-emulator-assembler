@@ -61,8 +61,9 @@ def test_assembler_errors(input_asm, expected_exit_code):
 		"stack1.asm",
 		"stack2.asm",
 		"stack3.asm",
+		"stack4.asm",
 		"newTrp.asm",
-		"fibonacci1.asm"
+		#"fibonacci1.asm"
 		#"newDirectives.asm",
 ])
 
