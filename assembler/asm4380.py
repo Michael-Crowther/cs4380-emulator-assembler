@@ -68,17 +68,13 @@ def parse_line(line, line_num, unresolved_labels, symbol_table, bytecode, starti
  
 		# resolve label of later found function call
 		if label != 'main':		
-			print(f"unresolved_labels: {unresolved_labels}")
 			address_pos = unresolved_labels[label]
 			address = starting_bytes - 8
-			print(f"adding {address} to {address_pos} for label: {label}")
 			address_bytes = address.to_bytes(2, byteorder='little', signed=True)
 			bytecode[address_pos - 7:address_pos - 7 + len(address_bytes)] = address_bytes
 		else:
-			print(f"unresolved_labels: {unresolved_labels}")
 			address_pos = unresolved_labels[label]
 			address = starting_bytes - 8
-			print(f"adding {address} to {address_pos} for label: {label}")
 			address_bytes = address.to_bytes(2, byteorder='little', signed=True)
 			bytecode[address_pos - 4:address_pos - 4 + len(address_bytes)] = address_bytes
 
@@ -135,8 +131,6 @@ def process_directive(directive_line, line_num, symbol_table, bytecode, variable
 	elif directive == ".byt":
 		if operand.startswith("'"):
 			char_value = ord(eval(operand)) #handles escape characters like \n or \t
-			print(f"char value: {char_value}")
-			print(f"bytes to add: {bytes([char_value])}")
 			bytes_to_add = bytes([char_value])
 		else: #numeric val
 			value = int(operand[1:]) if operand else 0
@@ -358,7 +352,7 @@ def assemble(filename):
 		if not parsed_line:
 			continue #skip empty lines and comments
 
-		print(f"parsed line: {parsed_line}")
+		#print(f"parsed line: {parsed_line}")
 
 		line_type, label, components = parsed_line
 
@@ -375,8 +369,6 @@ def assemble(filename):
 
 		if label:
 			symbol_table[label] = starting_bytes - 8
-			print(f"adding {label} to symbol table with position {starting_bytes - 8}")
-			print(f"symbol_table: {symbol_table}")
 
 		if line_type == 'directive':
 			if in_code_section:
@@ -411,7 +403,7 @@ def assemble(filename):
 	#throw error if any label called in an operand is not a valid function name
 	#print(f"{symbol_table} on line 397")
 	if len(unresolved_labels) > 0:
-		print(f"{unresolved_labels}")
+		#print(f"{unresolved_labels}")
 		#print(f"{symbol_table}")
 		print(f"Assembler error encountered on line {line_num}!")
 		sys.exit(2)
