@@ -29,7 +29,7 @@ bool init_mem(unsigned int size){
 }
 
 bool fetch(){
-  if(reg_file[PC] >= memorySize || reg_file[PC] + 7 > memorySize){
+  if(reg_file[PC] >= memorySize || reg_file[PC] + 7 > memorySize || reg_file[PC] < 0){
     return false;
   }
 	
@@ -56,6 +56,7 @@ bool decode(){
   	unsigned int operand1 = cntrl_regs[OPERAND_1];
   	unsigned int operand2 = cntrl_regs[OPERAND_2];
   	unsigned int operand3 = cntrl_regs[OPERAND_3];
+		unsigned int immediate = cntrl_regs[IMMEDIATE];
 
 /*	
 	cout << "operation: " << operation << endl;
@@ -71,6 +72,12 @@ bool decode(){
 
 	switch(operation){
 		case 1: //JMP
+			if(operand1 != 0 || operand2 != 0 || operand3 != 0){
+				return false;
+			}
+			if(immediate <= 0){
+				return false;
+			}
 			break;
 		case 7: //MOV
 			if(!isValidRegister(operand1) || !isValidRegister(operand2)) return false;
@@ -111,6 +118,7 @@ bool decode(){
 		    case 3:
 		    case 4:
 		    case 98:
+					data_regs[REG_VAL_1] = reg_file[R3];
 		      break;
 		    default:
 		      return false;
@@ -196,13 +204,13 @@ bool execute(){
 					exit(0);
 					break;
 				case 1: //Write int in R3 to stdout
-					cout << reg_file[R3];
+					cout << data_regs[REG_VAL_1];
 					break;
 				case 2: //Read an integer into R3 from stdin
 					cin >> reg_file[R3];
 					break;
 				case 3: //Write char in R3 to stdout
-					cout << static_cast<char>(reg_file[R3]);
+					cout << static_cast<char>(data_regs[REG_VAL_1]);
 					break;
 				case 4: //Read a char into R3 from stdin
 					reg_file[R3] = static_cast<unsigned int>(cin.get());

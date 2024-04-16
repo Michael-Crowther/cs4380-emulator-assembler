@@ -4,6 +4,20 @@
 #include <sstream>
 #include "../include/emu4380.h"
 
+TEST(DecodeTest, InvalidJMPOperation){
+	cntrl_regs[OPERATION] = 1;
+	cntrl_regs[OPERAND_1] = 5;
+
+	EXPECT_FALSE(decode());
+}
+
+TEST(DeocdeTest, InvalidJMPOperation2){
+	cntrl_regs[OPERATION] = 1;
+  cntrl_regs[IMMEDIATE] = 0;
+
+  EXPECT_FALSE(decode());
+}
+
 TEST(FetchTest, FetchNormalOperation){
 	int size = 131072;
 	prog_mem = new unsigned char[size];
@@ -45,17 +59,17 @@ TEST(FetchTest, FetchAtMemoryLimit){
   delete[] prog_mem;
 }
 
-/*
-TEST(FetchTest, FetchOverMemoryLimit){
+
+TEST(FetchTest, FetchUnderMemoryLimit){
   int size = 131072;
   prog_mem = new unsigned char[size];
-  reg_file[RegNames::PC] = size - 7;
+  reg_file[RegNames::PC] = -5;
 
   EXPECT_FALSE(fetch());
 
   delete[] prog_mem;
 }
-*/
+
 
 TEST(DecodeTest, ValidOperation){
 	cntrl_regs[CntrlRegNames::OPERATION] = 7; 
@@ -319,6 +333,25 @@ TEST(DecodeTest, DecodeDIVIValid) {
 
     ASSERT_TRUE(success);
     EXPECT_EQ(data_regs[REG_VAL_1], reg_file[8]);
+}
+
+TEST(TRPDecodeTest, ValidOperands){
+	cntrl_regs[OPERATION] = 31;
+	cntrl_regs[OPERAND_1] = 1;
+	
+	bool success = decode();
+
+	ASSERT_TRUE(success);
+  EXPECT_EQ(data_regs[REG_VAL_1], 1);
+}
+
+TEST(TRPDecodeTest, InvalidOperands){
+  cntrl_regs[OPERATION] = 31;
+  cntrl_regs[OPERAND_1] = 8;
+
+  bool success = decode();
+
+  ASSERT_FALSE(success);
 }
 
 TEST(ExecuteTest, JMPValid) {
@@ -610,23 +643,6 @@ TEST(RegisterTest, HandlesInvalidRegisters){
   EXPECT_FALSE(isValidRegister(validReg));
 }
 
-/*
-TEST(TrapTests, TRPWriteIntToStdOut){
-        cntrl_regs[OPERATION] = 31;
-        cntrl_regs[IMMEDIATE] = 1;
-        reg_file[R3] = 123;
-
-  std::stringstream buffer;
-  std::streambuf* prevCoutStreamBuf = std::cout.rdbuf();
-  std::cout.rdbuf(buffer.rdbuf());
-
-  execute();
-
-  std::cout.rdbuf(prevCoutStreamBuf);
-
-  EXPECT_EQ(buffer.str(), "123");
-}
-*/
 
 int main(int argc, char **argv){
 	::testing::InitGoogleTest(&argc, argv);
