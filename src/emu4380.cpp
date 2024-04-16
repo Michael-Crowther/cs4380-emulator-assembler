@@ -645,7 +645,7 @@ bool init_mem(unsigned int size){
 
 bool fetch(){
 	//cout << "fetch" << endl;
-  if(reg_file[PC] >= memorySize || reg_file[PC] + 7 > memorySize){
+  if(reg_file[PC] >= memorySize || reg_file[PC] + 8 > memorySize || reg_file[PC] < 0){
     return false;
   }
 	
@@ -700,6 +700,13 @@ bool decode(){
 
 	switch(operation){
 		case 1: //JMP
+			if(operand1 != 0 || operand2 != 0 || operand3 != 0){
+				return false;
+			}
+			if(immediate <= 0){
+				return false;
+			}
+			break;
 		case 39: //CALL
 		case 40: //RET
 			break;
@@ -717,8 +724,11 @@ bool decode(){
 		case 33: //ALLC
 			if(!isValidRegister(operand1)) return false;
 			break;
-		case 10: //STR
 		case 12: //STB
+			if (!isValidRegister(operand1)) return false;
+      	data_regs[REG_VAL_1] = reg_file[operand1] & 0xFF;
+      break;
+		case 10: //STR
 		case 2: //JMR
 		case 3: //BNZ
 		case 4: //BGT
@@ -766,7 +776,7 @@ bool decode(){
 				case 5:
 				case 6:
 		    case 98:
-					data_regs[REG_VAL_1] = reg_file[operand1];
+					data_regs[REG_VAL_1] = reg_file[R3];
 		      break;
 		    default:
 		      return false;
@@ -829,7 +839,7 @@ bool execute(){
 			break;
 		case 12: //STB
 			if(immediate >= memorySize) return false;
-			globalCache->writeByte(immediate, static_cast<unsigned char>(data_regs[REG_VAL_1] & 0xFF));
+			globalCache->writeByte(immediate, static_cast<unsigned char>(data_regs[REG_VAL_1]));
 			break;
 		case 13: //LDB
 			if(immediate >= memorySize) return false;
@@ -981,13 +991,13 @@ bool execute(){
 					exit(0);
 					break;
 				case 1: //Write int in R3 to stdout
-					cout << reg_file[R3];
+					cout << data_regs[REG_VAL_1];
 					break;
 				case 2: //Read an integer into R3 from stdin
 					cin >> reg_file[R3];
 					break;
 				case 3: //Write char in R3 to stdout
-					cout << static_cast<char>(reg_file[R3]);
+					cout << static_cast<char>(data_regs[REG_VAL_1]);
 					break;
 				case 4: //Read a char into R3 from stdin
 					reg_file[R3] = static_cast<unsigned int>(cin.get());
