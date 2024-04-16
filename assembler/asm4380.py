@@ -135,6 +135,8 @@ def process_directive(directive_line, line_num, symbol_table, bytecode, variable
 	elif directive == ".byt":
 		if operand.startswith("'"):
 			char_value = ord(eval(operand)) #handles escape characters like \n or \t
+			print(f"char value: {char_value}")
+			print(f"bytes to add: {bytes([char_value])}")
 			bytes_to_add = bytes([char_value])
 		else: #numeric val
 			value = int(operand[1:]) if operand else 0
@@ -168,10 +170,6 @@ def process_directive(directive_line, line_num, symbol_table, bytecode, variable
 	else:
 		print(f"Assembler error encountered on line {line_num}!")
 		sys.exit(2)
-
-	#update symbol table if there is a label
-	if label:
-		symbol_table[label] = len(bytecode)
 
 	#extend bytecode
 	bytecode.extend(bytes_to_add)
@@ -230,6 +228,7 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 				instruction_bytes.extend([0, 0])
 			else:
 				#resolve address of label
+				#print(f"symbol_table: {symbol_table}")
 				address = symbol_table.get(operand.strip(), 0)
 				address_bytes = address.to_bytes(4, byteorder='little', signed=True)
 				
@@ -305,7 +304,7 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
     # If operand is in the symbol table, treat as variable label
 		elif imm_value_operand in symbol_table:
 			# Fetch value or address associated with label
-			value_or_address = symbol_table[imm_value_operand] + 4
+			value_or_address = symbol_table[imm_value_operand]
 			instruction_bytes[-4:] = value_or_address.to_bytes(4, byteorder='little', signed=False)
 
 		# If operand is unrecognized, it's unresolved
@@ -376,6 +375,8 @@ def assemble(filename):
 
 		if label:
 			symbol_table[label] = starting_bytes - 8
+			print(f"adding {label} to symbol table with position {starting_bytes - 8}")
+			print(f"symbol_table: {symbol_table}")
 
 		if line_type == 'directive':
 			if in_code_section:

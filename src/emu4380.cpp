@@ -645,7 +645,6 @@ bool init_mem(unsigned int size){
 
 bool fetch(){
 	//cout << "fetch" << endl;
-	cout << "PC val: " << reg_file[PC] << endl;
   if(reg_file[PC] >= memorySize || reg_file[PC] + 7 > memorySize){
     return false;
   }
@@ -657,7 +656,7 @@ bool fetch(){
   cntrl_regs[OPERAND_3] = (firstWord >> 24) & 0xFF;
 
   cntrl_regs[IMMEDIATE] = globalCache->readWord(reg_file[PC] + 4);
-		
+	/*		
 	cout << "---JUST FETCHED---" << endl;
 	cout << "operation: " << cntrl_regs[OPERATION] << endl;
   cout << "operand1: " << cntrl_regs[OPERAND_1] << endl;
@@ -665,6 +664,7 @@ bool fetch(){
   cout << "operand3: " << cntrl_regs[OPERAND_3] << endl;
   cout << "immediate: " << cntrl_regs[IMMEDIATE] << endl;
   cout << endl;
+	*/
 
   if (dynamic_cast<NoCache*>(globalCache) != nullptr) {
   	mem_cycle_cntr -= 6;
@@ -946,7 +946,6 @@ bool execute(){
 			if(!safeUpdateSP(-4)) return false;
 			reg_file[SP] -= 4;
     	globalCache->writeWord(reg_file[SP], reg_file[PC]);
-			cout << "jumpting to: " << operand1 << endl;
     	reg_file[PC] = operand1;
     	break;
 		case 40: //RET
