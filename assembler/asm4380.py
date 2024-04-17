@@ -67,20 +67,14 @@ def parse_line(line, line_num, unresolved_labels, symbol_table, bytecode, starti
 		#print(f"removing unresolved_label: {label}")
  
 		# resolve label of later found function call
-		if label != 'main':		
-			print(f"unresolved_labels: {unresolved_labels}")
-			address_pos = unresolved_labels[label]
+		if label:		
+			address_positions = unresolved_labels[label]
 			address = starting_bytes - 8
-			print(f"adding {address} to {address_pos} for label: {label}")
 			address_bytes = address.to_bytes(2, byteorder='little', signed=True)
-			bytecode[address_pos - 7:address_pos - 7 + len(address_bytes)] = address_bytes
-		else:
-			print(f"unresolved_labels: {unresolved_labels}")
-			address_pos = unresolved_labels[label]
-			address = starting_bytes - 8
-			print(f"adding {address} to {address_pos} for label: {label}")
-			address_bytes = address.to_bytes(2, byteorder='little', signed=True)
-			bytecode[address_pos - 4:address_pos - 4 + len(address_bytes)] = address_bytes
+
+			for address_pos in address_positions:
+				print(f"adding {address} to position {address_pos} for label: {label}")
+				bytecode[address_pos - 4:address_pos - 4 + len(address_bytes)] = address_bytes
 
 		unresolved_labels.pop(label)
 		#check if there is more after label
@@ -205,7 +199,7 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 
 	instruction_bytes = [opcode_map[operator]]
 	#process operands from instruction type
-	if operator in ['jmp', 'lda', 'str', 'ldr', 'stb', 'ldb', 'bgt', 'popr', 'popb', 'call', 'ret']:
+	if operator in ['jmp', 'lda', 'str', 'ldr', 'stb', 'ldb', 'popr', 'popb', 'call', 'ret', 'bgt', 'blt']:
 		#print(f"operator: {operator}")
 		#print(f"operands: {operands}")
 		for operand in operands:
@@ -240,10 +234,14 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 					#instruction_bytes.extend(address_bytes)
 				else:
 					instruction_bytes.extend(address_bytes)
+				#need to add elements to unresolved labels. Can add more than one value to dict for second pass
 				if operand.strip() not in symbol_table and operand.strip() not in register_map:
-					unresolved_labels[operand.strip()] = starting_bytes - 4
+					if operand.strip() not in unresolved_labels:
+						unresolved_labels[operand.strip()] = [starting_bytes - 4]
+					else:
+						unresolved_labels[operand.strip()].append(starting_bytes - 4)
 
-	elif operator in ['mov', 'add', 'sub', 'mul', 'div', 'sdiv', 'jmr', 'istr', 'ildr', 'bnz', 'bgt', 'istb', 'ildb', 'cmp', 'and', 'or', 'pshr', 'pshb', 'iallc']:
+	elif operator in ['mov', 'add', 'sub', 'mul', 'div', 'sdiv', 'jmr', 'istr', 'ildr', 'bnz', 'istb', 'ildb', 'cmp', 'and', 'or', 'pshr', 'pshb', 'iallc']:
 		for operand in operands:
 			operand = operand.strip()
 			if operand.startswith("'"):
@@ -260,9 +258,10 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 				address = symbol_table.get(operand.strip(), 0)
 				instruction_bytes.extend(address.to_bytes(4, byteorder='little', signed=False))
 			else:
-				unresolved_labels[operand.strip()] = starting_bytes - 1
-				#print(f"adding to unresolved_labels on line 255: {operand.strip()} for line_num: {line_num} with position: {len(bytecode) - 4}")
-				#unresolved_labels[operand.strip()] = len(bytecode)
+				if operand.strip() not in unresolved_labels:
+					unresolved_labels[operand.strip()] = [starting_bytes - 1]
+				else:
+					unresolved_labels[operand.strip()].append(starting_bytes - 1)
 
 	elif operator in ['movi', 'addi', 'subi', 'muli', 'divi', 'cmpi', 'alci', 'allc']:
 		reg_operand_1 = operands[0].strip().lower()
@@ -309,8 +308,10 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 
 		# If operand is unrecognized, it's unresolved
 		else:
-			#print(f"adding to unresolved_labels on 302: {imm_value_operand} on line_num: {line_num} with position: {len(instruction_bytes) - 4}")
-			unresolved_labels[imm_value_operand] = len(instruction_bytes) - 4
+			if imm_value_operand not in unresolved_labels:
+				unresolved_labels[imm_value_operand] = [len(instruction_bytes) - 4]
+			else:
+				unresolved_labels[imm_value_operand].append(len(instruction_bytes) - 4);
 
 	elif operator == 'trp':
 		if len(operands) == 0:
