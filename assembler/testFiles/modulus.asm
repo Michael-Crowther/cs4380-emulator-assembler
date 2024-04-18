@@ -4,6 +4,7 @@ prompt1 .STR "Please enter an integer dividend: \n"
 prompt2 .STR "Please enter an integer divisor: \n"
 prompt3 .STR " divided by "
 prompt4 .STR " results in a remainder of: "
+newline .STR "\n"
 
 JMP MAIN
 
@@ -33,8 +34,8 @@ MAIN  MOVI R3, prompt1
       CALL mod         ; Call mod function
 
       ; Print the result
-      MOVI R3, prompt1
-      TRP #5
+      ;MOVI R3, prompt1
+      ;TRP #5
       MOV R3, R0
       TRP #1           ; Print dividend
       MOVI R3, prompt3
@@ -45,5 +46,7 @@ MAIN  MOVI R3, prompt1
       TRP #5
       MOV R3, R2
       TRP #1           ; Print remainder
+			MOVI R3, newline
+      TRP #5            ; Print newline for clean output
       TRP #0           ; Terminate program
 

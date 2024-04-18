@@ -1,43 +1,62 @@
-; Assembly code to calculate Fibonacci number recursively
+; Recursive Fibonacci.asm - Calculates the nth Fibonacci number recursively
 
 prompt1 .STR "Please enter the Fibonacci term you would like computed: \n"
-prompt2 .STR "The Fibonacci number is: "
+prompt2 .STR "Term "
+prompt3 .STR " in the Fibonacci sequence is: "
+newline .STR "\n"
 
 JMP MAIN
 
-fib  CMPI R2, R1, #1   ; Compare n with 1
-     BLT R2, RECURSE   ; If n < 1, go to recursive computation
-     BNZ R2, BASE_CASE ; If n == 1, go to base case
+MAIN             MOVI R3, prompt1
+                 TRP #5            ; Print the initial prompt
+                 TRP #2            ; Read integer into R3 (Fibonacci term)
+                 MOV R5, R3        ; Store user input for later use in printing
 
-BASE_CASE  RET               ; If n is 0 or 1, return n as it is the result
+                 ; Check for special cases before calling the recursive function
+                 CMPI R6, R3, #1
+                 BGT R6, CHECK_TWO
+                 MOVI R0, #0       ; If the term is 1, result is 0
+                 JMP PRINT_RESULT
 
+CHECK_TWO        CMPI R6, R3, #2
+                 BGT R6, RECURSIVE_CALL
+                 MOVI R0, #1       ; If the term is 2, result is 1
+                 JMP PRINT_RESULT
 
-    ; Recursive case: fib(n-1) + fib(n-2)
-    ; Calculate fib(n-1)
-RECURSE    PSHR R1           ; Save current n
-           SUBI R1, R1, #1   ; n = n - 1
-           CALL fib          ; Calculate fib(n-1)
-           MOV R3, R1        ; Store result of fib(n-1) in R3
+RECURSIVE_CALL   MOV R1, R3        ; Pass the term number in R1
+                 CALL FIB          ; Call the recursive Fibonacci function
 
-           ; Calculate fib(n-2)
-           POPR R1           ; Restore original n
-           SUBI R1, R1, #2   ; n = n - 2
-           CALL fib          ; Calculate fib(n-2)
+FIB              CMPI R6, R1, #2
+                 BGT R6, RECURSIVE_STEP
+                 MOV R0, R1        ; Return 1 for Fib(1) and Fib(2)
+                 RET
 
-          ; Add results of fib(n-1) and fib(n-2)
-          ADD R1, R3, R1    ; R1 = fib(n-1) + fib(n-2)
-          RET
+RECURSIVE_STEP   PSHR R1           ; Save n-1 on stack
+								 SUBI R1, R1, #1
+                 CALL FIB
+                 PSHR R0           ; Save Fib(n-1) result on stack
 
-MAIN  MOVI R3, prompt1
-      TRP #5
-      TRP #2            ; Read integer into R3
-      MOV R1, R3        ; Move read value to R1
+                 ; Fib(n-2)
+                 POPR R1           ; Get n-1 from stack
+                 SUBI R1, R1, #2
+                 CALL FIB          ; Calculate Fib(n-2)
 
-      CALL fib          ; Calculate fibonacci number
+                 ; Add Fib(n-1) and Fib(n-2)
+                 POPR R2           ; Get Fib(n-1) from stack
+                 ADD R0, R0, R2    ; R0 = Fib(n-1) + Fib(n-2)
 
-      MOVI R3, prompt2
-      TRP #5
-      MOV R3, R1
-      TRP #1            ; Print Fibonacci number
-      TRP #0            ; Terminate program
+                 RET               ; Return result
 
+PRINT_RESULT     MOV R4, R0        ; Move result to R4 for printing
+                 ; Print sequence and result
+                 MOVI R3, prompt2
+                 TRP #5
+                 MOV R3, R5        ; Load the term number to be printed
+                 TRP #1
+                 MOVI R3, prompt3
+                 TRP #5
+                 MOV R3, R4        ; Load the Fibonacci result to be printed
+                 TRP #1
+                 MOVI R3, newline
+                 TRP #5            ; Print newline for clean output
+                 TRP #0            ; Terminate the program

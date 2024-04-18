@@ -70,13 +70,13 @@ int main(int argc, char** argv){
 	reg_file[PC] = *reinterpret_cast<unsigned int*>(prog_mem);
 
 	//set SB
-	reg_file[SB] = memorySize + 1;
+	reg_file[SB] = memorySize - 1;
 
 	//set SL
 	reg_file[SL] = fileSize;
 
 	//set SP
-  reg_file[SP] = memorySize + 1;
+  reg_file[SP] = memorySize - 1;
 
 	//execution loop
 	bool running = true;

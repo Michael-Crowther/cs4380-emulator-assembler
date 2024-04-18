@@ -685,12 +685,13 @@ bool decode(){
   	unsigned int operand3 = cntrl_regs[OPERAND_3];
 		unsigned int immediate = cntrl_regs[IMMEDIATE];
 	
-	/*
+/*	
 	cout << "operation: " << operation << endl;
 	cout << "operand1: " << operand1 << endl;
 	cout << "operand2: " << operand2 << endl;
 	cout << "operand3: " << operand3 << endl;
 	cout << "immediate: " << immediate << endl;
+	cout << "reg_file[operand1]: " << reg_file[operand1] << endl;
 	cout << endl;
 	*/
 
@@ -798,7 +799,7 @@ bool execute(){
 	unsigned int operand2 = cntrl_regs[OPERAND_2];
 	unsigned int operand3 = cntrl_regs[OPERAND_3];
 	unsigned int immediate = cntrl_regs[IMMEDIATE];
-		
+
 	switch(operation){
 		case 1: //JMP
 			reg_file[PC] = immediate; //jump to address of immediate
@@ -817,7 +818,7 @@ bool execute(){
 			}
 			break;
 		case 5: //BLT
-			if(data_regs[REG_VAL_1] < 0){
+			if(data_regs[REG_VAL_1] == 4294967295){
 				reg_file[PC] = immediate;
 			}
 			break;
@@ -957,7 +958,7 @@ bool execute(){
 			if(!safeUpdateSP(-4)) return false;
 			reg_file[SP] -= 4;
     	globalCache->writeWord(reg_file[SP], reg_file[PC]);
-    	reg_file[PC] = operand1;
+    	reg_file[PC] = immediate;
     	break;
 		case 40: //RET
 			reg_file[PC] = globalCache->readWord(reg_file[SP]);

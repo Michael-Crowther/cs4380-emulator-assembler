@@ -17,15 +17,16 @@ MAIN           MOVI R3, prompt1
                MOVI R2, #1       ; R2 = n2 = 1, second Fibonacci number
 							 MOV  R5, R3       ;store user input for printing
 		           MOVI R4, #0       ; final term
+							 MOVI R8, #0
 
                ; Check if the input is 1
-               CMPI R6, R3, #1   ; Compare R3 (user input) with 1
-               BGT R6, CHECK_TWO ; If input > 1, check for input being 2
+               CMPI R6, R5, #1   ; Compare R5 (user input) with 1
+               BGT R6, CHECK_TWO ; If input > 0, check for input being 2
                MOV R4, R1        ; If input is 1, R4 = n1 (0)
                JMP PRINT
 
-CHECK_TWO    CMPI R6, R3, #2   ; Compare input with 2
-             BGT R6, COMPUTE   ; If input > 2, go to compute more terms
+CHECK_TWO    CMPI R6, R5, #2   ; Compare input with 2
+             BGT R6, COMPUTE   ; If input > 0, go to compute more terms
              MOV R4, R2        ; If input is 2, R4 = n2 (1)
              JMP PRINT         ; Go to print result
 

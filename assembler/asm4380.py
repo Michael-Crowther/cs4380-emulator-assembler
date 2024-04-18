@@ -53,7 +53,8 @@ def parse_line(line, line_num, unresolved_labels, symbol_table, bytecode, starti
 	#start parsing line parts
 	parts = code.split(maxsplit=1)
 
-	#print(f"parsed line parts: {parts}")
+	print(f"parsed line parts: {parts}")
+	print(f"parsed parts[0].lower: {parts[0].lower()}")
 
 	if len(parts) > 1 and parts[1].startswith('.'):
 		#label then directive
@@ -65,7 +66,7 @@ def parse_line(line, line_num, unresolved_labels, symbol_table, bytecode, starti
 	elif parts[0].lower() in unresolved_labels:
 		label = parts[0].lower()
 		#print(f"removing unresolved_label: {label}")
- 
+
 		# resolve label of later found function call
 		if label:		
 			address_positions = unresolved_labels[label]
@@ -73,8 +74,8 @@ def parse_line(line, line_num, unresolved_labels, symbol_table, bytecode, starti
 			address_bytes = address.to_bytes(2, byteorder='little', signed=True)
 
 			for address_pos in address_positions:
-				print(f"adding {address} to position {address_pos} for label: {label}")
 				bytecode[address_pos - 4:address_pos - 4 + len(address_bytes)] = address_bytes
+				print(f"adding {address} to position {address_pos - 4} for label: {label}")
 
 		unresolved_labels.pop(label)
 		#check if there is more after label
@@ -213,6 +214,7 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 			elif operand in symbol_table:
 				address = symbol_table[operand.strip()]
 				address_bytes = address.to_bytes(4, byteorder='little', signed=True)
+				instruction_bytes.extend([0, 0, 0])
 				instruction_bytes.extend(address_bytes)
 			elif operand in register_map:
 				reg_id = register_map[operand]
@@ -227,11 +229,11 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 				address_bytes = address.to_bytes(4, byteorder='little', signed=True)
 				
 				# Modify the fourth byte here
-				if operator in ['jmp']:
+				if operator in ['jmp'] and operand in unresolved_labels:
+					print(f"-------- adding {operand} to byte 4 of {operator} on line {line_num}")
 					starting_bytes_array = starting_bytes.to_bytes(4, byteorder='little', signed=True)
 					instruction_bytes.extend([0, 0, 0])
 					instruction_bytes.extend(starting_bytes_array)
-					#instruction_bytes.extend(address_bytes)
 				else:
 					instruction_bytes.extend(address_bytes)
 				#need to add elements to unresolved labels. Can add more than one value to dict for second pass
