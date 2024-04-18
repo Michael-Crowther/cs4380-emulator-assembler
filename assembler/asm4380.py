@@ -53,8 +53,8 @@ def parse_line(line, line_num, unresolved_labels, symbol_table, bytecode, starti
 	#start parsing line parts
 	parts = code.split(maxsplit=1)
 
-	print(f"parsed line parts: {parts}")
-	print(f"parsed parts[0].lower: {parts[0].lower()}")
+	#print(f"parsed line parts: {parts}")
+	#print(f"parsed parts[0].lower: {parts[0].lower()}")
 
 	if len(parts) > 1 and parts[1].startswith('.'):
 		#label then directive
@@ -75,7 +75,7 @@ def parse_line(line, line_num, unresolved_labels, symbol_table, bytecode, starti
 
 			for address_pos in address_positions:
 				bytecode[address_pos - 4:address_pos - 4 + len(address_bytes)] = address_bytes
-				print(f"adding {address} to position {address_pos - 4} for label: {label}")
+				#print(f"adding {address} to position {address_pos - 4} for label: {label}")
 
 		unresolved_labels.pop(label)
 		#check if there is more after label
@@ -130,8 +130,8 @@ def process_directive(directive_line, line_num, symbol_table, bytecode, variable
 	elif directive == ".byt":
 		if operand.startswith("'"):
 			char_value = ord(eval(operand)) #handles escape characters like \n or \t
-			print(f"char value: {char_value}")
-			print(f"bytes to add: {bytes([char_value])}")
+			#print(f"char value: {char_value}")
+			#print(f"bytes to add: {bytes([char_value])}")
 			bytes_to_add = bytes([char_value])
 		else: #numeric val
 			value = int(operand[1:]) if operand else 0
@@ -230,7 +230,7 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 				
 				# Modify the fourth byte here
 				if operator in ['jmp'] and operand in unresolved_labels:
-					print(f"-------- adding {operand} to byte 4 of {operator} on line {line_num}")
+					#print(f"-------- adding {operand} to byte 4 of {operator} on line {line_num}")
 					starting_bytes_array = starting_bytes.to_bytes(4, byteorder='little', signed=True)
 					instruction_bytes.extend([0, 0, 0])
 					instruction_bytes.extend(starting_bytes_array)
@@ -361,7 +361,7 @@ def assemble(filename):
 		if not parsed_line:
 			continue #skip empty lines and comments
 
-		print(f"parsed line: {parsed_line}")
+		#print(f"parsed line: {parsed_line}")
 
 		line_type, label, components = parsed_line
 
@@ -378,8 +378,8 @@ def assemble(filename):
 
 		if label:
 			symbol_table[label] = starting_bytes - 8
-			print(f"adding {label} to symbol table with position {starting_bytes - 8}")
-			print(f"symbol_table: {symbol_table}")
+			#print(f"adding {label} to symbol table with position {starting_bytes - 8}")
+			#print(f"symbol_table: {symbol_table}")
 
 		if line_type == 'directive':
 			if in_code_section:
@@ -414,7 +414,7 @@ def assemble(filename):
 	#throw error if any label called in an operand is not a valid function name
 	#print(f"{symbol_table} on line 397")
 	if len(unresolved_labels) > 0:
-		print(f"{unresolved_labels}")
+		#print(f"{unresolved_labels}")
 		#print(f"{symbol_table}")
 		print(f"Assembler error encountered on line {line_num}!")
 		sys.exit(2)
