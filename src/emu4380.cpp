@@ -625,11 +625,11 @@ bool safeUpdateSP(int increment){
 	unsigned int newSP = reg_file[SP] + increment;
 
 	if(newSP > reg_file[SB]){
-		//cout << "STACK ERROR ON 628. New SP is greater than reg_file[SB]!" << endl;
+		cout << "STACK ERROR ON 628. New SP is greater than reg_file[SB]!" << endl;
 		return false;
 	}
 	if(newSP < reg_file[SL]){
-		//cout << "STACK ERROR ON 632. New SP is less than reg_file[SL]!" << endl;
+		cout << "STACK ERROR ON 632. New SP is less than reg_file[SL]!" << endl;
 		//cout << "new SP: " << newSP << endl;
 		//cout << "reg_file[SL]: " << reg_file[SL] << endl;
 		return false;
@@ -692,7 +692,7 @@ bool decode(){
   	unsigned int operand3 = cntrl_regs[OPERAND_3];
 		unsigned int immediate = cntrl_regs[IMMEDIATE];
 	
-/*	
+	/*
 	cout << "operation: " << operation << endl;
 	cout << "operand1: " << operand1 << endl;
 	cout << "operand2: " << operand2 << endl;
@@ -807,6 +807,7 @@ bool execute(){
 	unsigned int operand3 = cntrl_regs[OPERAND_3];
 	unsigned int immediate = cntrl_regs[IMMEDIATE];
 
+
 	switch(operation){
 		case 1: //JMP
 			reg_file[PC] = immediate; //jump to address of immediate
@@ -827,6 +828,7 @@ bool execute(){
 			}
 			break;
 		case 5: //BLT
+			//cout << "value of R5 in BLT: " << data_regs[REG_VAL_1] << endl;
 			if(data_regs[REG_VAL_1] == 4294967295){
 				reg_file[PC] = immediate;
 			}

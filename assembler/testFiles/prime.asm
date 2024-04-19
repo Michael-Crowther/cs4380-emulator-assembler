@@ -1,74 +1,80 @@
-; Prime Number Generator Assembly Program
+; Assembly code for Prime Number Generator
 
 welcomeMsg1 .STR "Welcome to the Prime Number Generator.\n"
 welcomeMsg2 .STR "This program searches for and displays the first 20 prime numbers greater than or equal to a user provided lower bound.\n"
 welcomeMsg3 .STR "Please enter a lower bound: "
 resultMsg   .STR "The first 20 prime numbers greater than or equal to "
 newLine     .STR "\n"
-primeList   .BTS 80          ; Allocate 80 bytes (20 integers * 4 bytes each)
+primeList   .BTS #80 ; Allocate 80 bytes (20 integers * 4 bytes each)
 
 JMP MAIN
 
+; Start of main program execution
+MAIN  MOVI R3, welcomeMsg1
+    TRP  #5            ; Print part 1 of welcome message
+    MOVI R3, welcomeMsg2
+    TRP  #5            ; Print part 2 of welcome message
+    MOVI R3, welcomeMsg3
+    TRP  #5            ; Print part 3 of welcome message
+    TRP  #2            ; Read user's lower bound into R3
+
+    MOV  R5, R3        ; Move lower bound to R5 for prime checking
+		MOV  R9, R3
+    MOVI R6, #0        ; Prime count
+    MOVI R7, #0        ; Offset index for storing primes in primeList
+
+find_primes  MOV  R4, R5        ; Copy current number to R4 for prime checking
+    CALL is_prime     ; Check if R4 is prime
+    BNZ  R1, store_prime ; If prime, store it
+    ADDI R5, R5, #1    ; Increment number to check
+    CMPI  R8, R6, #20   ; Check if 20 primes are found
+    BLT  R8, find_primes ; If less than 20, find next prime
+
+    ; Print results
+    MOVI R3, resultMsg
+    TRP  #5             ; Print result message
+    MOV  R3, R9
+    TRP  #1             ; Print lower bound
+    MOVI R3, newLine
+    TRP  #5             ; Print newline
+
+    ; Print all primes
+    MOVI R7, #0        ; Reset index for output
+
+print_primes  LDR  R3, primeList ; Load prime from storage
+    TRP  #1            ; Print prime number
+    MOVI R3, newLine
+    TRP  #5            ; Print newline
+    ADDI R7, R7, #4    ; Move to next prime in list
+    CMPI  R8, R7, #80   ; Check if all primes printed
+    BLT  R8, print_primes
+
+    TRP  #0            ; Terminate program
+
 is_prime  MOVI R1, #1             ; Assume R4 is prime
-          MOVI R2, #2             ; Start divisor from 2
+    MOVI R2, #2             ; Start divisor from 2
 
-check_loop  CMP R3, R2, R4          ; Compare divisor with the number
-            BGT R3, end_check       ; If divisor >= number, end check
-            DIV R3, R4, R2          ; Divide number by divisor
-            MUL R5, R3, R2          ; Multiply quotient by divisor
-            CMP R6, R5, R4          ; Compare product with number
-            BNZ R6, next_div        ; If not equal, try next divisor
-            MOVI R1, #0             ; Number is not prime
-            JMP end_check
+check_loop  CMP R3, R2, R4          ; Compare divisor (R2) with the number (R4), result in R3
+    BGT R3, end_check       ; If divisor > number, end check (R4 is prime if no divisors found)
+    BLT R3, continue_check  ; If divisor < number, continue check
 
-next_div    ADDI R2, R2, #1         ; Increment divisor
-            JMP check_loop
+    ; This point reached means R2 == R4
+    MOVI R1, #1             ; Confirm number is prime
+    RET                     ; Return from the function
 
-end_check   RET                     ; Return with result in R1
+continue_check  DIV R6, R4, R2          ; Divide number by divisor, result in R6
+    MUL R7, R6, R2          ; Multiply quotient by divisor, result in R7
+    CMP R8, R7, R4          ; Compare product with number
+    BNZ R8, next_div        ; If not zero, divisor does not divide the number perfectly, try next
 
-MAIN        MOVI R3, welcomeMsg1
-            TRP #5                  ; Print part 1 of welcome message
-            MOVI R3, welcomeMsg2
-            TRP #5                  ; Print part 2 of welcome message
-            MOVI R3, welcomeMsg3
-            TRP #5                  ; Print part 3 of welcome message
-            TRP #2                  ; Read user's lower bound into R3
-            MOV R5, R3              ; Move lower bound to R5 for processing
+    MOVI R1, #0             ; If we reach here, it means R7 == R4, not prime
+    RET                     ; Return with R1 as 0 (not prime)
 
-            ; Initialize count of primes found and index
-            MOVI R6, #0             ; Prime count
-            MOVI R9, primeList      ; Initialize pointer to start of primeList
+next_div  ADDI R2, R2, #1         ; Increment divisor
+    JMP check_loop          ; Continue loop
 
-find_primes  MOV R4, R5              ; Copy current number to R4 for prime checking
-             CALL is_prime           ; Check if R5 is prime
-             BNZ R1, store_prime     ; If prime, store it
-             ADDI R5, R5, #1         ; Increment number to check
-             CMP R8, R6, #20         ; Check if 20 primes are found
-             BLT R8, find_primes     ; If less than 20, find next prime
-             JMP print_result
+end_check  RET                     ; Return with R1 still 1 (prime)
 
-store_prime  STR R5, R9            ; Store prime number at current position in primeList
-             ADDI R9, R9, #4         ; Move pointer to next storage location
-             ADDI R6, R6, #1         ; Increment count of primes found
-             JMP find_primes
-
-print_result  MOVI R3, resultMsg
-              TRP #5                  ; Print result message
-              MOV R3, R5
-              TRP #1                  ; Print the lower bound
-              MOVI R3, newLine
-              TRP #5                  ; Print newline
-
-             ; Print all primes
-              MOVI R9, primeList      ; Reset pointer for output
-              MOVI R7, #20            ; Initialize count for printing
-
-print_primes  LDR R3, R9            ; Load prime from storage
-              TRP #1                  ; Print prime number
-              MOVI R3, newLine
-              TRP #5                  ; Print newline
-              ADDI R9, R9, #4         ; Move pointer to the next prime
-              SUBI R7, R7, #1         ; Decrement the print count
-              BNZ R7, print_primes    ; If not zero, continue printing
-
-              TRP #0                  ; Terminate program
+store_prime  STR  R4, primeList      ; Store prime number at primeList offset
+    ADDI R6, R6, #1         ; Increment count of primes found
+    RET                     ; Return to find next prime

@@ -200,7 +200,7 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 
 	instruction_bytes = [opcode_map[operator]]
 	#process operands from instruction type
-	if operator in ['jmp', 'lda', 'str', 'ldr', 'stb', 'ldb', 'popr', 'popb', 'call', 'ret', 'bgt', 'blt']:
+	if operator in ['jmp', 'lda', 'str', 'ldr', 'stb', 'ldb', 'popr', 'popb', 'call', 'ret', 'bgt', 'blt', 'bnz']:
 		#print(f"operator: {operator}")
 		#print(f"operands: {operands}")
 		for operand in operands:
@@ -243,7 +243,7 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 					else:
 						unresolved_labels[operand.strip()].append(starting_bytes - 4)
 
-	elif operator in ['mov', 'add', 'sub', 'mul', 'div', 'sdiv', 'jmr', 'istr', 'ildr', 'bnz', 'istb', 'ildb', 'cmp', 'and', 'or', 'pshr', 'pshb', 'iallc']:
+	elif operator in ['mov', 'add', 'sub', 'mul', 'div', 'sdiv', 'jmr', 'istr', 'ildr', 'istb', 'ildb', 'cmp', 'and', 'or', 'pshr', 'pshb', 'iallc']:
 		for operand in operands:
 			operand = operand.strip()
 			if operand.startswith("'"):
@@ -420,7 +420,8 @@ def assemble(filename):
 		sys.exit(2)
 
 	#write the first 4 bytes for prog_mem
-	initial_bytes = [starting_bytes - 8 - instructions_processed * 8, 0, 0, 0]
+	initial_value = starting_bytes - 8 - instructions_processed * 8
+	initial_bytes = initial_value.to_bytes(4, byteorder='little', signed=False)
 
 	#write the output file
 	output_filename = filename.replace('.asm', '.bin')
