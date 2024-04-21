@@ -5,7 +5,7 @@ newline .STR "\n"
 
 JMP MAIN
 
-MAIN  MOVI R3, prompt1
+MAIN  LDA R3, prompt1
       TRP #5            ; Print the initial prompt
       TRP #2            ; Read integer into R3 (Fibonacci term)
       MOV R5, R3        ; Store user input for later use in printing
@@ -27,7 +27,7 @@ RECURSIVE_CALL  MOV R1, R3        ; Pass the term number in R1
 
 FIB   CMPI R6, R1, #2
       BGT R6, RECURSIVE_STEP ; If R1 > 2, proceed with recursive steps
-			MOV R0, #1
+			MOVI R0, #1
       RET
 
 RECURSIVE_STEP  PSHR R1           ; Save n on stack
@@ -44,14 +44,14 @@ RECURSIVE_STEP  PSHR R1           ; Save n on stack
                 RET
 
 PRINT_RESULT   MOV R4, R0        ; Move result to R4 for printing
-               MOVI R3, prompt2
+               LDA R3, prompt2
                TRP #5
                MOV R3, R5        ; Load the term number to be printed
                TRP #1
-               MOVI R3, prompt3
+               LDA R3, prompt3
                TRP #5
                MOV R3, R4        ; Load the Fibonacci result to be printed
                TRP #1
-               MOVI R3, newline
+               LDA R3, newline
                TRP #5            ; Print newline for clean output
                TRP #0            ; Terminate the program

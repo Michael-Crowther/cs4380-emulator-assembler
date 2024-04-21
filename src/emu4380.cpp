@@ -625,13 +625,15 @@ bool safeUpdateSP(int increment){
 	unsigned int newSP = reg_file[SP] + increment;
 
 	if(newSP > reg_file[SB]){
+		cout << "newSP: " << newSP << endl;
+		cout << "reg_file[SB]: " << reg_file[SB] << endl;
 		cout << "STACK ERROR ON 628. New SP is greater than reg_file[SB]!" << endl;
 		return false;
 	}
 	if(newSP < reg_file[SL]){
 		cout << "STACK ERROR ON 632. New SP is less than reg_file[SL]!" << endl;
-		//cout << "new SP: " << newSP << endl;
-		//cout << "reg_file[SL]: " << reg_file[SL] << endl;
+		cout << "new SP: " << newSP << endl;
+		cout << "reg_file[SL]: " << reg_file[SL] << endl;
 		return false;
 	}
 	return true;
@@ -652,7 +654,7 @@ bool init_mem(unsigned int size){
 
 bool fetch(){
 	//cout << "fetch" << endl;
-	//cout << "PC val: " << reg_file[PC] << endl;
+	cout << "PC val: " << reg_file[PC] << endl;
   if(reg_file[PC] >= memorySize || reg_file[PC] + 8 > memorySize || reg_file[PC] < 0){
     return false;
   }
@@ -664,7 +666,7 @@ bool fetch(){
   cntrl_regs[OPERAND_3] = (firstWord >> 24) & 0xFF;
 
   cntrl_regs[IMMEDIATE] = globalCache->readWord(reg_file[PC] + 4);
-		/*	
+			
 	cout << "---JUST FETCHED---" << endl;
 	cout << "operation: " << cntrl_regs[OPERATION] << endl;
   cout << "operand1: " << cntrl_regs[OPERAND_1] << endl;
@@ -672,7 +674,7 @@ bool fetch(){
   cout << "operand3: " << cntrl_regs[OPERAND_3] << endl;
   cout << "immediate: " << cntrl_regs[IMMEDIATE] << endl;
   cout << endl;
-*/
+
 
   if (dynamic_cast<NoCache*>(globalCache) != nullptr) {
   	mem_cycle_cntr -= 6;
@@ -748,10 +750,13 @@ bool decode(){
       			data_regs[REG_VAL_1] = reg_file[operand1];
       			break;
 		case 14: //ISTR
-		case 16: //ISTB
 			if(!isValidRegister(operand1) || !isValidRegister(operand2)) return false;
 				data_regs[REG_VAL_1] = reg_file[operand1];
 				break;
+		case 16: //ISTB
+			if(!isValidRegister(operand1) || !isValidRegister(operand2)) return false;
+      	data_regs[REG_VAL_1] = reg_file[operand1] & 0xFF;
+      	break;
 		case 18: //ADD
 		case 20: //SUB
 		case 22: //MUL
@@ -876,7 +881,7 @@ bool execute(){
   	{
     	unsigned int address = reg_file[operand2]; // Address is in RG
     	if(address >= memorySize) return false;
-			globalCache->writeByte(address, static_cast<unsigned char>(data_regs[REG_VAL_1] & 0xFF));
+			globalCache->writeByte(address, static_cast<unsigned char>(data_regs[REG_VAL_1]));
   	}
   	break;
 		case 17: // ILDB
@@ -934,11 +939,6 @@ bool execute(){
 			}
 			break;
 		case 30: //CMPI
-			//cout << "got to CMPI at position: " << reg_file[PC] - 8 << endl;
-			//if(data_regs[REG_VAL_1] < 20){
-				//cout << "reg_file[R1] in CMPI: " << data_regs[REG_VAL_1] << "at position: " << reg_file[PC] - 8 << endl;
-			//}
-			//cout << "immedaite: " << immediate << endl;
 			if(data_regs[REG_VAL_1] == immediate){
         reg_file[operand1] = 0;
       }
@@ -948,17 +948,11 @@ bool execute(){
       else if(data_regs[REG_VAL_1] < immediate){
         reg_file[operand1] = -1;
       }
-			//if(data_regs[REG_VAL_1] < 20){
-				//cout << "reg_file[R6] after CMPI: " << reg_file[R6] << endl;
-			//}
 			break;
 		case 35: //PSHR
 			if(!safeUpdateSP(-4)) return false;
 			reg_file[SP] -= 4;
 			globalCache->writeWord(reg_file[SP], data_regs[REG_VAL_1]); //push word onto the stack
-			//if(data_regs[REG_VAL_1] < 10){
-				//cout << "pushing onto stack: " << data_regs[REG_VAL_1] << endl << endl;
-			//}
 			break;
 		case 36: //PSHB
 			if(!safeUpdateSP(-1)) return false;
@@ -970,7 +964,6 @@ bool execute(){
 			reg_file[operand1] = globalCache->readWord(reg_file[SP]);
 			if(!safeUpdateSP(4)) return false;
     	reg_file[SP] += 4;
-			//cout << "popping from stack: " << reg_file[operand1] << endl << endl;
     	break;
 		case 38: //POPB
 			reg_file[operand1] = globalCache->readByte(reg_file[SP]);
@@ -987,7 +980,6 @@ bool execute(){
 			reg_file[PC] = globalCache->readWord(reg_file[SP]);
 			if(!safeUpdateSP(4)) return false;
     	reg_file[SP] += 4;
-			//cout << "returning to address: " << reg_file[PC] << endl << endl;
     	break;
 		case 32: //ALCI
 			reg_file[operand1] = reg_file[HP];
@@ -1030,9 +1022,9 @@ bool execute(){
 					break;
 				case 5: //null terminated Pascal-style string
 					{	
-						unsigned char length = prog_mem[reg_file[R3]];
+						unsigned char length = prog_mem[data_regs[REG_VAL_1]];
         		for(int i = 1; i <= length; ++i) {
-            	cout << static_cast<char>(prog_mem[reg_file[R3] + i]);
+            	cout << static_cast<char>(prog_mem[data_regs[REG_VAL_1] + i]);
         		}
 					}
 					break;

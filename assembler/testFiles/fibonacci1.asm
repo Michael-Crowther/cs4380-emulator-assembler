@@ -8,7 +8,7 @@ newline .STR "\n"
 
 JMP MAIN
 
-MAIN           MOVI R3, prompt1
+MAIN           LDA R3, prompt1
                TRP #5            ; Print the initial prompt
                TRP #2            ; Read integer into R3 (stopValue)
 
@@ -43,14 +43,14 @@ LOOP         ADD R6, R1, R2    ; R6 = n1 + n2 (calculate next Fibonacci number)
 INCREMENT   ADDI R7, R7, #1   ; Increment term index
             JMP LOOP          ; Continue the loop
 
-PRINT       MOVI R3, prompt2
+PRINT       LDA R3, prompt2
             TRP #5
             MOV R3, R5        ; Load the temp variable to be printed
             TRP #1
-            MOVI R3, prompt3
+            LDA R3, prompt3
             TRP #5
             MOV R3, R4        ; Load the Fibonacci result to be printed
             TRP #1
-            MOVI R3, newline
+            LDA R3, newline
             TRP #5            ; Print newline for clean output
             TRP #0            ; Terminate the program

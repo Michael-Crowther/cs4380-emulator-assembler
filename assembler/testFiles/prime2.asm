@@ -1,11 +1,10 @@
-; Assembly code for Prime Number Generator with dynamic prime storage
+; Assembly code for Prime Number Generator using Heap Memory
 
 welcomeMsg1 .STR "Welcome to the Prime Number Generator.\n"
 welcomeMsg2 .STR "This program searches for and displays the first 20 prime numbers greater than or equal to a user provided lower bound.\n"
 welcomeMsg3 .STR "Please enter a lower bound: "
 resultMsg   .STR "The first 20 prime numbers greater than or equal to "
 newLine     .STR "\n"
-primeList   .BTS #80 ; Allocate 80 bytes (20 integers * 4 bytes each)
 
 JMP MAIN
 
@@ -21,7 +20,10 @@ MAIN  MOVI R3, welcomeMsg1
     MOV  R5, R3        ; Move lower bound to R5 for prime checking
     MOV  R9, R3        ; Save initial lower bound for later printing
     MOVI R6, #0        ; Prime count
-    LDA  R7, primeList ; Load address of primeList into R7
+
+    ; Allocate heap space for storing 20 prime numbers (4 bytes each)
+		MOVI R10, #80
+    IALLC R7, R10       ; Allocate space and store base address in R7
 
 find_primes  MOV  R4, R5        ; Copy current number to R4 for prime checking
     CALL is_prime     ; Check if R4 is prime
@@ -38,8 +40,9 @@ find_primes  MOV  R4, R5        ; Copy current number to R4 for prime checking
     MOVI R3, newLine
     TRP  #5             ; Print newline
 
-    ; Print all primes
-    LDA  R7, primeList  ; Reset address to start of primeList
+    ; Reset R7 to start of heap memory for primes
+    MOVI R10, #80
+    IALLC R7, R10
 
 print_primes  ILDR R3, R7         ; Load prime from storage at address in R7
     TRP  #1             ; Print prime number
@@ -58,7 +61,6 @@ check_loop  CMP  R3, R2, R4     ; Compare divisor (R2) with the number (R4), res
     BGT  R3, end_check  ; If divisor > number, end check (R4 is prime if no divisors found)
     BLT  R3, continue_check  ; If divisor < number, continue check
 
-    ; This point reached means R2 == R4
     MOVI R1, #1         ; Confirm number is prime
     RET                 ; Return from the function
 
