@@ -655,7 +655,7 @@ bool init_mem(unsigned int size){
 bool fetch(){
 	//cout << "fetch" << endl;
 	cout << "PC val: " << reg_file[PC] << endl;
-  if(reg_file[PC] >= memorySize || reg_file[PC] + 8 > memorySize || reg_file[PC] < 0){
+  if(reg_file[PC] >= memorySize || reg_file[PC] + 8 >= memorySize || reg_file[PC] < 0){
     return false;
   }
 	
@@ -712,9 +712,6 @@ bool decode(){
 	switch(operation){
 		case 1: //JMP
 			if(operand1 != 0 || operand2 != 0 || operand3 != 0){
-				return false;
-			}
-			if(immediate <= 0){
 				return false;
 			}
 			break;
@@ -783,12 +780,22 @@ bool decode(){
 		case 31: //TRP
 		  switch(operand1){
 		    case 0:
+					break;
 		    case 1:
+					data_regs[REG_VAL_1] = reg_file[R3];
+					break;
 		    case 2:
+					break;
 		    case 3:
+					data_regs[REG_VAL_1] = reg_file[R3] & 0xFF;
+					break;
 		    case 4:
+					break;
 				case 5:
+					data_regs[REG_VAL_1] = reg_file[R3];
+					break;
 				case 6:
+					break;
 		    case 98:
 					data_regs[REG_VAL_1] = reg_file[R3];
 		      break;
@@ -1018,7 +1025,7 @@ bool execute(){
 					cout << static_cast<char>(data_regs[REG_VAL_1]);
 					break;
 				case 4: //Read a char into R3 from stdin
-					reg_file[R3] = static_cast<unsigned int>(cin.get());
+					reg_file[R3] = static_cast<char>(cin.get());
 					break;
 				case 5: //null terminated Pascal-style string
 					{	
