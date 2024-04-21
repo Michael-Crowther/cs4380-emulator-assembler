@@ -14,7 +14,7 @@ def parse_line(line, line_num, unresolved_labels, symbol_table, bytecode, starti
 
 	#handles comments at end of line
 	code, _, comment = trimmed_line.partition(';')
-	code = code.strip().lower()
+	code = code.strip()
 
 	if not code:
 		return None, unresolved_labels, bytecode
@@ -31,7 +31,7 @@ def parse_line(line, line_num, unresolved_labels, symbol_table, bytecode, starti
 		'popr', 'popb', 'call', 'ret', 'alci', 'allc', 'iallc'
   ]
 
-	words = code.split()
+	words = code.lower().split()
 
 	# Initialize counts
 	directive_count = 0
@@ -58,10 +58,10 @@ def parse_line(line, line_num, unresolved_labels, symbol_table, bytecode, starti
 
 	if len(parts) > 1 and parts[1].startswith('.'):
 		#label then directive
-		label = parts[0] if not parts[0].startswith('.') else None
-		directive = parts[1]
-		operand = ' '.join(parts[2:]) if len(parts) > 2 else None
-		return ('directive', label, f"{directive} {operand}" if operand else directive), unresolved_labels, bytecode
+		label = parts[0].lower() if not parts[0].startswith('.') else None
+		directive, *operand = parts[1].split(maxsplit=1)
+		directive_operand = f"{directive.lower()} {''.join(operand)}" if operand else directive.lower()
+		return ('directive', label, directive_operand), unresolved_labels, bytecode
 
 	elif parts[0].lower() in unresolved_labels:
 		label = parts[0].lower()
@@ -83,30 +83,30 @@ def parse_line(line, line_num, unresolved_labels, symbol_table, bytecode, starti
 			#split further to identify instruction/directive
 			next_parts = parts[1].split(maxsplit=1)
 			if next_parts[0].startswith('.'):
-				directive = next_parts[0]
+				directive = next_parts[0].lower()
 				operand = next_parts[1] if len(next_parts) == 2 else None
 				return ('directive', label, f"{directive} {operand}" if operand else directive), unresolved_labels, bytecode
 			else:
-				return ('instruction', label, parts[1]), unresolved_labels, bytecode
+				return ('instruction', label, parts[1].lower()), unresolved_labels, bytecode
 		else: #just a label
 			return ('label', label, None), unresolved_labels, bytecode
 
 	#check if line starts with directive
 	elif parts[0].startswith('.'):
-		directive = parts[0]
+		directive = parts[0].lower()
 		operand = parts[1] if len(parts) == 2 else None
 		return ('directive', None, f"{directive} {operand}" if operand else directive), unresolved_labels, bytecode
 
 	elif len(parts) > 1 and parts[0].lower() not in instruction_keywords:
 		#label then instruction
-		label = parts[0]
+		label = parts[0].lower()
 		instruction_and_operands = parts[1].split(maxsplit=1)
 		instruction = instruction_and_operands[0]
 		operand = instruction_and_operands[1] if len(instruction_and_operands) > 1 else None
-		return ('instruction', label, f"{instruction} {operand}" if operand else instruction), unresolved_labels, bytecode
+		return ('instruction', label, f"{instruction.lower()} {operand.lower()}" if operand else instruction), unresolved_labels, bytecode
 
 	else:
-		return ('instruction', None, code), unresolved_labels, bytecode
+		return ('instruction', None, code.lower()), unresolved_labels, bytecode
 
 	return None, unresolved_labels, bytecode
 
@@ -148,11 +148,11 @@ def process_directive(directive_line, line_num, symbol_table, bytecode, variable
 		if operand.startswith('"') or operand.startswith("'"):
     # Remove the quotes and handle escape characters
 			string_value = eval(operand)
-			length = len(string_value)
-			if length > 255:
+			string_length = len(string_value)
+			if string_length > 255:
 				print(f"Assembler error encountered on line {line_num}!")
 				sys.exit(2)
-			bytes_to_add = bytes([length]) + string_value.encode() + bytes([0])
+			bytes_to_add = bytes([string_length]) + string_value.encode() + bytes([0])
 		else:
     # Numeric literal handling
 			numeric_value = int(operand[1:]) if operand else 0
@@ -200,7 +200,7 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 
 	instruction_bytes = [opcode_map[operator]]
 	#process operands from instruction type
-	if operator in ['jmp', 'lda', 'str', 'ldr', 'stb', 'ldb', 'popr', 'popb', 'call', 'ret', 'bgt', 'blt']:
+	if operator in ['jmp', 'lda', 'str', 'ldr', 'stb', 'ldb', 'popr', 'popb', 'call', 'ret', 'bgt', 'blt', 'bnz']:
 		#print(f"operator: {operator}")
 		#print(f"operands: {operands}")
 		for operand in operands:
@@ -243,7 +243,7 @@ def process_instruction(instruction_line, line_num, symbol_table, bytecode, unre
 					else:
 						unresolved_labels[operand.strip()].append(starting_bytes - 4)
 
-	elif operator in ['mov', 'add', 'sub', 'mul', 'div', 'sdiv', 'jmr', 'istr', 'ildr', 'bnz', 'istb', 'ildb', 'cmp', 'and', 'or', 'pshr', 'pshb', 'iallc']:
+	elif operator in ['mov', 'add', 'sub', 'mul', 'div', 'sdiv', 'jmr', 'istr', 'ildr', 'istb', 'ildb', 'cmp', 'and', 'or', 'pshr', 'pshb', 'iallc']:
 		for operand in operands:
 			operand = operand.strip()
 			if operand.startswith("'"):
@@ -420,7 +420,8 @@ def assemble(filename):
 		sys.exit(2)
 
 	#write the first 4 bytes for prog_mem
-	initial_bytes = [starting_bytes - 8 - instructions_processed * 8, 0, 0, 0]
+	initial_value = starting_bytes - 8 - instructions_processed * 8
+	initial_bytes = initial_value.to_bytes(4, byteorder='little', signed=False)
 
 	#write the output file
 	output_filename = filename.replace('.asm', '.bin')

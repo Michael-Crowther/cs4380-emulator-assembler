@@ -1,6 +1,7 @@
 Everything	.INT	#42 		;constant int
 H		.BYT	'h' 		;character
 I		.BYT	'I' 		;character
+
 	jmp 	MAIN
 MAIN ldr 	r0, Everything 		;42 into r0
 	movi 	r1, #0 			;0 into r1 

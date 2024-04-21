@@ -1,5 +1,10 @@
+message .STR "This is my Hellow World program! \n"
+
 JMP MAIN
-                   		MAIN         		  MOVI       		       R3   ,     		        #72
+
+MAIN    LDA R3, message
+				TRP #5
+				MOVI  R3, #72
         TRP #3
         MOVI R3, #101      ; 'e'
         TRP #3
