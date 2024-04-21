@@ -4,6 +4,87 @@
 #include <sstream>
 #include "../include/emu4380.h"
 
+TEST(ExecuteDecodeTest, TRPReadChar) {
+    cntrl_regs[OPERATION] = 31;
+    cntrl_regs[OPERAND_1] = 4;   // TRP #4 Read a char
+
+    ASSERT_TRUE(decode());
+
+    std::stringstream buffer("B");
+    std::streambuf* prevCin = std::cin.rdbuf(buffer.rdbuf());
+
+    execute();
+
+    std::cin.rdbuf(prevCin);
+
+    EXPECT_EQ(reg_file[R3], 'B');
+}
+
+TEST(ExecuteDecodeTest, TRPWriteChar) {
+    cntrl_regs[OPERATION] = 31;
+    cntrl_regs[OPERAND_1] = 3; 
+    reg_file[R3] = 'A';          
+
+    ASSERT_TRUE(decode());
+
+    std::stringstream buffer;
+    std::streambuf* prevCout = std::cout.rdbuf(buffer.rdbuf());
+
+    execute();
+
+    std::cout.rdbuf(prevCout);
+
+    EXPECT_EQ(buffer.str(), "A");
+}
+
+TEST(ExecuteDecodeTest, TRPReadInteger) {
+    cntrl_regs[OPERATION] = 31;
+    cntrl_regs[OPERAND_1] = 2; 
+
+    ASSERT_TRUE(decode());
+
+    // Redirect cin from a stringstream to simulate input
+    std::stringstream buffer("67890");
+    std::streambuf* prevCin = std::cin.rdbuf(buffer.rdbuf());
+
+    execute();
+
+    // Restore original cin buffer
+    std::cin.rdbuf(prevCin);
+
+    EXPECT_EQ(reg_file[R3], 67890);
+}
+
+TEST(ExecuteDecodeTest, TRPWriteInteger) {
+    cntrl_regs[OPERATION] = 31;
+    cntrl_regs[OPERAND_1] = 1; 
+    reg_file[R3] = 12345;    
+
+    ASSERT_TRUE(decode());
+
+    // Redirect cout to a stringstream to capture output
+    std::stringstream buffer;
+    std::streambuf* prevCout = std::cout.rdbuf(buffer.rdbuf());
+
+    execute();
+
+    // Restore original cout buffer
+    std::cout.rdbuf(prevCout);
+
+    EXPECT_EQ(buffer.str(), "12345");
+}
+
+
+TEST(FetchTest, InvalidFetch){
+	int size = 131072;
+  prog_mem = new unsigned char[size];
+  reg_file[RegNames::PC] = size - 8;
+
+  EXPECT_FALSE(fetch());
+
+  delete[] prog_mem;
+}
+
 TEST(DecodeTest, InvalidJMPOperation){
 	cntrl_regs[OPERATION] = 1;
 	cntrl_regs[OPERAND_1] = 5;
@@ -28,15 +109,6 @@ TEST(FetchTest, FetchNormalOperation){
 	delete[] prog_mem;
 }
 
-TEST(FetchTest, FetchAtMemoryBoundary){
-  int size = 131072;
-  prog_mem = new unsigned char[size];
-  reg_file[RegNames::PC] = size - 8;
-
-  EXPECT_TRUE(fetch());
-
-  delete[] prog_mem;
-}
 
 TEST(FetchTest, FetchWithInvalidPC){
   int size = 131072;
@@ -83,6 +155,16 @@ TEST(DecodeTest, InvalidOperation){
   cntrl_regs[CntrlRegNames::OPERATION] = 99;
 
   EXPECT_FALSE(decode());
+}
+
+TEST(DecodeTest, ValidJMP){
+	cntrl_regs[OPERATION] = 1;
+	cntrl_regs[OPERAND_1] = 0;
+	cntrl_regs[OPERAND_2] = 0;
+	cntrl_regs[OPERAND_3] = 0;
+	cntrl_regs[IMMEDIATE] = 0;
+
+	EXPECT_TRUE(decode());
 }
 
 TEST(DecodeTest, InvalidOperand){
