@@ -1,8 +1,12 @@
     ONE .int #1
-		AYE .byt 'a'    
+		lower .byt 'a'
+		upper .byt 'A' 
+		   
 
 		JMP MAIN
 
-MAIN		MOVI R3, ONE
-		    LDB R4, AYE
+MAIN		LDB R3, lower
+				TRP #3
+		    LDB R3, upper
+				TRP #3
 				TRP #0
