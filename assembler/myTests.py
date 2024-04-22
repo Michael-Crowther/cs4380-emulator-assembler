@@ -58,7 +58,7 @@ def test_assembler_valid_output(input_asm):
 		results_directory = "results"
 
 		generated_output_bin = os.path.join(directory, input_asm.replace('.asm', '.bin'))
-		expected_output_bin = os.path.join(results_directory, input_asm.replace('.asm', '.bin'))
+		#expected_output_bin = os.path.join(results_directory, input_asm.replace('.asm', '.bin'))
 
 		result = run_assembler(input_asm)
 
