@@ -58,17 +58,15 @@ is_prime        PSHR R11
                 MOVI R1, #1       ; Assume R4 is prime  
                 MOVI R2, #2       ; Start divisor from 2
 
-check_loop      CMP R3, R2, R4    ; Compare divisor (R2) with the number (R4), result in R3
-                BGT R3, end_check ; If divisor > number, end check (R4 is prime if no divisors found)
-                BLT R3, continue_check ; If divisor < number, continue check
+check_loop      CMP R3, R2, R4    ; Compare current divisor (R2) with the number (R4)
+                BGT R3, end_check ; If divisor > number, R4 is prime (no divisors found)
+                DIV R6, R4, R2    ; Divide number by divisor
+                MUL R7, R6, R2    ; Multiply quotient by divisor
+                CMP R8, R4, R7    ; Compare original number with the result
+                BNZ R8, next_div  ; If not zero, no exact division, try next divisor
 
-                MOVI R1, #0       ; Set number is not prime
-                JMP end_check     ; Jump to end, bypassing additional checks
- 
-continue_check  DIV R6, R4, R2    ; Divide number by divisor, result in R6
-                MUL R7, R6, R2    ; Multiply quotient by divisor, result in R7
-                CMP R8, R4, R7    ; Compare product with number
-                BNZ R8, next_div  ; If not zero, divisor does not divide the number perfectly, try next
+                MOVI R1, #0       ; Exact division found, number is not prime
+                JMP end_check     ; Exit checking
 
                 MOVI R1, #0       ; Set not prime
                 JMP end_check     ; Jump to end, bypassing additional checks
