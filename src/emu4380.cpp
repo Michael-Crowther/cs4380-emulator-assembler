@@ -625,15 +625,9 @@ bool safeUpdateSP(int increment){
 	unsigned int newSP = reg_file[SP] + increment;
 
 	if(newSP > reg_file[SB]){
-		cout << "newSP: " << newSP << endl;
-		cout << "reg_file[SB]: " << reg_file[SB] << endl;
-		cout << "STACK ERROR ON 628. New SP is greater than reg_file[SB]!" << endl;
 		return false;
 	}
 	if(newSP < reg_file[SL]){
-		cout << "STACK ERROR ON 632. New SP is less than reg_file[SL]!" << endl;
-		cout << "new SP: " << newSP << endl;
-		cout << "reg_file[SL]: " << reg_file[SL] << endl;
 		return false;
 	}
 	return true;
@@ -835,19 +829,15 @@ bool execute(){
 		case 4: //BGT
 			if(data_regs[REG_VAL_1] > 0 && data_regs[REG_VAL_1] != 4294967295){
 				reg_file[PC] = immediate;
-				cout << "BGT jump to address: " << immediate << endl;
-				cout << "reg_file[R3] after BGT: " << reg_file[R3] << endl;
 			}
 			break;
 		case 5: //BLT
-			//cout << "value of R5 in BLT: " << data_regs[REG_VAL_1] << endl;
 			if(data_regs[REG_VAL_1] == 4294967295){
 				reg_file[PC] = immediate;
 			}
 			break;
 		case 7: //MOV
 			reg_file[operand1] = data_regs[REG_VAL_1]; //move contents of RS to RD
-			//cout << "R2 after mov: " << reg_file[operand1] << endl;
 			break;
 		case 8: //MOVI
 			reg_file[operand1] = immediate; //move immediate value into RD
@@ -881,7 +871,6 @@ bool execute(){
 		case 15: // ILDR
   	{
     	unsigned int address = data_regs[REG_VAL_1]; // Address is in RG
-			//cout << "storing in RD in ILDR: " << data_regs[REG_VAL_1] << endl;
     	if(address >= memorySize) return false;
 			reg_file[operand1] = globalCache->readWord(address);
   	}
@@ -911,7 +900,6 @@ bool execute(){
 			break;
 		case 21: //SUBI
 			reg_file[operand1] = data_regs[REG_VAL_1] - immediate; //subtract imm from RS1 store in RD
-			//cout << "operand value after SUBI: " << reg_file[operand1] << endl;
 			break;
 		case 22: //MUL
 			reg_file[operand1] = data_regs[REG_VAL_1] * data_regs[REG_VAL_2]; //multiply RS1 by RS2, store in RD
@@ -938,9 +926,6 @@ bool execute(){
 			reg_file[operand1] = (data_regs[REG_VAL_1] != 0 || data_regs[REG_VAL_2] != 0) ? 1 : 0; //logical || on RS1 and RS2
 			break;
 		case 29: //CMP
-			if(data_regs[REG_VAL_1] < 10 && data_regs[REG_VAL_2] < 10){
-				cout << "Comparing " << data_regs[REG_VAL_1] << " and " << data_regs[REG_VAL_2] << endl;
-			}
 			if(data_regs[REG_VAL_1] == data_regs[REG_VAL_2]){
 				reg_file[operand1] = 0;
 			}
@@ -950,9 +935,6 @@ bool execute(){
 			else if(data_regs[REG_VAL_1] < data_regs[REG_VAL_2]){
 				reg_file[operand1] = -1;
 			}
-			if(data_regs[REG_VAL_1] < 10 && data_regs[REG_VAL_2] < 10){
-        cout << "Setting RD to: " << reg_file[operand1] << endl;
-      }
 			break;
 		case 30: //CMPI
 			if(data_regs[REG_VAL_1] == immediate){
@@ -1019,7 +1001,7 @@ bool execute(){
 		case 31: //TRP
 			switch(operand1){
 				case 0: //STOP-Exit
-					//cout << "Execution completed. Total memory cycles: " << mem_cycle_cntr << endl;
+					cout << "Execution completed. Total memory cycles: " << mem_cycle_cntr << endl;
           delete[] prog_mem;
           delete globalCache;
 					exit(0);

@@ -1,4 +1,3 @@
-
 ;fibonacci.asm - Calculates the nth Fibonacci number iteratively
 
 prompt1 .STR "Please enter the Fibonacci term you would like computed: \n"
