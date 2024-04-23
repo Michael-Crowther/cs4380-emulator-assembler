@@ -4,6 +4,7 @@
 #include <sstream>
 #include "../include/emu4380.h"
 
+
 TEST(FetchTest, FetchNormalOperation){
 	int size = 131072;
 	prog_mem = new unsigned char[size];
@@ -44,6 +45,7 @@ TEST(FetchTest, FetchAtMemoryLimit){
 
   delete[] prog_mem;
 }
+
 
 /*
 TEST(FetchTest, FetchOverMemoryLimit){

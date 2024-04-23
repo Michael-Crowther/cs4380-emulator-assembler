@@ -15,7 +15,7 @@ unsigned int cntrl_regs[num_cntrl_regs];
 unsigned int data_regs[num_data_regs];
 Cache* globalCache = nullptr;
 unsigned int mem_cycle_cntr = 0;
-static const unordered_set<unsigned int> validOperations = {1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 31};
+static const unordered_set<unsigned int> validOperations = {1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40};
 
 void init_cache(unsigned int cacheType){
   delete globalCache; //cleanup existing cache if any
@@ -621,6 +621,18 @@ void TwoWaySetAssociativeCache::init(unsigned int cacheType) {
 }
 
 
+bool safeUpdateSP(int increment){
+	unsigned int newSP = reg_file[SP] + increment;
+
+	if(newSP > reg_file[SB]){
+		return false;
+	}
+	if(newSP < reg_file[SL]){
+		return false;
+	}
+	return true;
+}
+
 bool isValidRegister(unsigned int reg){
   return reg < num_gen_regs;
 };
@@ -636,7 +648,8 @@ bool init_mem(unsigned int size){
 
 bool fetch(){
 	//cout << "fetch" << endl;
-  if(reg_file[PC] >= memorySize || reg_file[PC] + 7 > memorySize){
+	//cout << "PC val: " << reg_file[PC] << endl;
+  if(reg_file[PC] >= memorySize || reg_file[PC] + 8 >= memorySize || reg_file[PC] < 0){
     return false;
   }
 	
@@ -647,6 +660,15 @@ bool fetch(){
   cntrl_regs[OPERAND_3] = (firstWord >> 24) & 0xFF;
 
   cntrl_regs[IMMEDIATE] = globalCache->readWord(reg_file[PC] + 4);
+		/*	
+	cout << "---JUST FETCHED---" << endl;
+	cout << "operation: " << cntrl_regs[OPERATION] << endl;
+  cout << "operand1: " << cntrl_regs[OPERAND_1] << endl;
+  cout << "operand2: " << cntrl_regs[OPERAND_2] << endl;
+  cout << "operand3: " << cntrl_regs[OPERAND_3] << endl;
+  cout << "immediate: " << cntrl_regs[IMMEDIATE] << endl;
+  cout << endl;
+*/
 
   if (dynamic_cast<NoCache*>(globalCache) != nullptr) {
   	mem_cycle_cntr -= 6;
@@ -664,13 +686,17 @@ bool decode(){
   	unsigned int operand1 = cntrl_regs[OPERAND_1];
   	unsigned int operand2 = cntrl_regs[OPERAND_2];
   	unsigned int operand3 = cntrl_regs[OPERAND_3];
-
-/*	
+		unsigned int immediate = cntrl_regs[IMMEDIATE];
+	
+	/*
 	cout << "operation: " << operation << endl;
 	cout << "operand1: " << operand1 << endl;
 	cout << "operand2: " << operand2 << endl;
 	cout << "operand3: " << operand3 << endl;
-*/
+	cout << "immediate: " << immediate << endl;
+	cout << "reg_file[operand1]: " << reg_file[operand1] << endl;
+	cout << endl;
+	*/
 
 	//check validity of operation
 	if(validOperations.find(operation) == validOperations.end()){
@@ -679,6 +705,12 @@ bool decode(){
 
 	switch(operation){
 		case 1: //JMP
+			if(operand1 != 0 || operand2 != 0 || operand3 != 0){
+				return false;
+			}
+			break;
+		case 39: //CALL
+		case 40: //RET
 			break;
 		case 7: //MOV
 			if(!isValidRegister(operand1) || !isValidRegister(operand2)) return false;
@@ -688,27 +720,41 @@ bool decode(){
 		case 9: //LDA
 		case 11: //LDR
 		case 13: //LDB
+		case 37: //POPR
+		case 38: //POPB
+		case 32: //ALCI
+		case 33: //ALLC
 			if(!isValidRegister(operand1)) return false;
 			break;
-		case 10: //STR
 		case 12: //STB
+			if (!isValidRegister(operand1)) return false;
+      	data_regs[REG_VAL_1] = reg_file[operand1] & 0xFF;
+      break;
+		case 10: //STR
 		case 2: //JMR
 		case 3: //BNZ
 		case 4: //BGT
 		case 5: //BLT
+		case 35: //PSHR
+		case 36: //PSHB
 			if (!isValidRegister(operand1)) return false;
       			data_regs[REG_VAL_1] = reg_file[operand1];
       			break;
 		case 14: //ISTR
-		case 16: //ISTB
 			if(!isValidRegister(operand1) || !isValidRegister(operand2)) return false;
 				data_regs[REG_VAL_1] = reg_file[operand1];
 				break;
+		case 16: //ISTB
+			if(!isValidRegister(operand1) || !isValidRegister(operand2)) return false;
+      	data_regs[REG_VAL_1] = reg_file[operand1] & 0xFF;
+      	break;
 		case 18: //ADD
 		case 20: //SUB
 		case 22: //MUL
 		case 24: //DIV
 		case 25: //SDIV
+		case 27: //AND
+		case 28: //OR
 		case 29: //CMP
 			if(!isValidRegister(operand1) || !isValidRegister(operand2) || !isValidRegister(operand3)) return false;
 			data_regs[REG_VAL_1] = reg_file[operand2]; //RS1
@@ -721,17 +767,31 @@ bool decode(){
 		case 23: //MULI
 		case 26: //DIVI
 		case 30: //CMPI
+		case 34: //IALLC
 			if(!isValidRegister(operand1) || !isValidRegister(operand2)) return false;
       			data_regs[REG_VAL_1] = reg_file[operand2]; //RS1
       			break;
 		case 31: //TRP
 		  switch(operand1){
 		    case 0:
+					break;
 		    case 1:
+					data_regs[REG_VAL_1] = reg_file[R3];
+					break;
 		    case 2:
+					break;
 		    case 3:
+					data_regs[REG_VAL_1] = reg_file[R3] & 0xFF;
+					break;
 		    case 4:
+					break;
+				case 5:
+					data_regs[REG_VAL_1] = reg_file[R3];
+					break;
+				case 6:
+					break;
 		    case 98:
+					data_regs[REG_VAL_1] = reg_file[R3];
 		      break;
 		    default:
 		      return false;
@@ -752,7 +812,8 @@ bool execute(){
 	unsigned int operand2 = cntrl_regs[OPERAND_2];
 	unsigned int operand3 = cntrl_regs[OPERAND_3];
 	unsigned int immediate = cntrl_regs[IMMEDIATE];
-		
+
+
 	switch(operation){
 		case 1: //JMP
 			reg_file[PC] = immediate; //jump to address of immediate
@@ -766,12 +827,12 @@ bool execute(){
 			}
 			break;
 		case 4: //BGT
-			if(data_regs[REG_VAL_1] > 0){
+			if(data_regs[REG_VAL_1] > 0 && data_regs[REG_VAL_1] != 4294967295){
 				reg_file[PC] = immediate;
 			}
 			break;
 		case 5: //BLT
-			if(data_regs[REG_VAL_1] < 0){
+			if(data_regs[REG_VAL_1] == 4294967295){
 				reg_file[PC] = immediate;
 			}
 			break;
@@ -794,7 +855,7 @@ bool execute(){
 			break;
 		case 12: //STB
 			if(immediate >= memorySize) return false;
-			globalCache->writeByte(immediate, static_cast<unsigned char>(data_regs[REG_VAL_1] & 0xFF));
+			globalCache->writeByte(immediate, static_cast<unsigned char>(data_regs[REG_VAL_1]));
 			break;
 		case 13: //LDB
 			if(immediate >= memorySize) return false;
@@ -818,7 +879,7 @@ bool execute(){
   	{
     	unsigned int address = reg_file[operand2]; // Address is in RG
     	if(address >= memorySize) return false;
-			globalCache->writeByte(address, static_cast<unsigned char>(data_regs[REG_VAL_1] & 0xFF));
+			globalCache->writeByte(address, static_cast<unsigned char>(data_regs[REG_VAL_1]));
   	}
   	break;
 		case 17: // ILDB
@@ -858,6 +919,12 @@ bool execute(){
 			if(immediate == 0) return false;
 			reg_file[operand1] = static_cast<unsigned int>(static_cast<int>(data_regs[REG_VAL_1]) / static_cast<int>(immediate)); //Divide RS1 by Imm (signed), result in RD.
 			break;
+		case 27: //ADD
+			reg_file[operand1] = (data_regs[REG_VAL_1] != 0 && data_regs[REG_VAL_2] != 0) ? 1 : 0; //logical && on RS1 and RS2
+			break;
+		case 28: //OR
+			reg_file[operand1] = (data_regs[REG_VAL_1] != 0 || data_regs[REG_VAL_2] != 0) ? 1 : 0; //logical || on RS1 and RS2
+			break;
 		case 29: //CMP
 			if(data_regs[REG_VAL_1] == data_regs[REG_VAL_2]){
 				reg_file[operand1] = 0;
@@ -880,6 +947,57 @@ bool execute(){
         reg_file[operand1] = -1;
       }
 			break;
+		case 35: //PSHR
+			if(!safeUpdateSP(-4)) return false;
+			reg_file[SP] -= 4;
+			globalCache->writeWord(reg_file[SP], data_regs[REG_VAL_1]); //push word onto the stack
+			break;
+		case 36: //PSHB
+			if(!safeUpdateSP(-1)) return false;
+			reg_file[SP] -= 1;
+			globalCache->writeByte(reg_file[SP], static_cast<unsigned char>(data_regs[REG_VAL_1] & 0xFF));
+
+			break;
+		case 37: //POPR
+			reg_file[operand1] = globalCache->readWord(reg_file[SP]);
+			if(!safeUpdateSP(4)) return false;
+    	reg_file[SP] += 4;
+    	break;
+		case 38: //POPB
+			reg_file[operand1] = globalCache->readByte(reg_file[SP]);
+			if(!safeUpdateSP(1)) return false;
+    	reg_file[SP] += 1;
+    	break;
+		case 39: //CALL
+			if(!safeUpdateSP(-4)) return false;
+			reg_file[SP] -= 4;
+    	globalCache->writeWord(reg_file[SP], reg_file[PC]);
+    	reg_file[PC] = immediate;
+    	break;
+		case 40: //RET
+			reg_file[PC] = globalCache->readWord(reg_file[SP]);
+			if(!safeUpdateSP(4)) return false;
+    	reg_file[SP] += 4;
+    	break;
+		case 32: //ALCI
+			reg_file[operand1] = reg_file[HP];
+   		reg_file[HP] += immediate;
+    	break;
+		case 33: //ALLC
+			{
+        unsigned int size = globalCache->readWord(immediate);
+        reg_file[operand1] = reg_file[HP];
+        reg_file[HP] += size;
+    	}
+    	break;
+		case 34: //IALLC
+			{
+        unsigned int addr = data_regs[REG_VAL_1];
+        unsigned int size = globalCache->readWord(addr);
+        reg_file[operand1] = reg_file[HP];
+        reg_file[HP] += size;
+    	}
+    	break;
 		case 31: //TRP
 			switch(operand1){
 				case 0: //STOP-Exit
@@ -889,16 +1007,38 @@ bool execute(){
 					exit(0);
 					break;
 				case 1: //Write int in R3 to stdout
-					cout << reg_file[R3];
+					cout << data_regs[REG_VAL_1];
 					break;
 				case 2: //Read an integer into R3 from stdin
 					cin >> reg_file[R3];
 					break;
 				case 3: //Write char in R3 to stdout
-					cout << static_cast<char>(reg_file[R3]);
+					cout << static_cast<char>(data_regs[REG_VAL_1]);
 					break;
 				case 4: //Read a char into R3 from stdin
-					reg_file[R3] = static_cast<unsigned int>(cin.get());
+					reg_file[R3] = static_cast<char>(cin.get());
+					break;
+				case 5: //null terminated Pascal-style string
+					{	
+						unsigned char length = prog_mem[data_regs[REG_VAL_1]];
+        		for(int i = 1; i <= length; ++i) {
+            	cout << static_cast<char>(prog_mem[data_regs[REG_VAL_1] + i]);
+        		}
+					}
+					break;
+				case 6: //read newline terminated string from stdin
+					{
+        		string input;
+        		getline(cin, input); // Read until newline
+        		if (input.size() > 255) {
+            	input = input.substr(0, 255); // don't exceed 255 characters, typical limit for Pascal-style strings
+        		}
+        		prog_mem[reg_file[R3]] = static_cast<unsigned char>(input.size()); // store length at the starting address
+        		for (size_t i = 0; i < input.size(); ++i) {
+            	prog_mem[reg_file[R3] + i + 1] = input[i]; // Store characters after the length
+        		}
+        		prog_mem[reg_file[R3] + input.size() + 1] = '\0'; // Append null character
+    			}
 					break;
 				case 98: //Print all registers to stdout
 					for(size_t i = 0; i <= 15; ++i){
