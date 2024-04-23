@@ -700,9 +700,12 @@ bool decode(){
       			data_regs[REG_VAL_1] = reg_file[operand1];
       			break;
 		case 14: //ISTR
-		case 16: //ISTB
 			if(!isValidRegister(operand1) || !isValidRegister(operand2)) return false;
 				data_regs[REG_VAL_1] = reg_file[operand1];
+				break;
+		case 16: //ISTB
+			if(!isValidRegister(operand1) || !isValidRegister(operand2)) return false;
+				data_regs[REG_VAL_1] = reg_file[operand1] & 0xFF;
 				break;
 		case 18: //ADD
 		case 20: //SUB
@@ -727,11 +730,19 @@ bool decode(){
 		case 31: //TRP
 		  switch(operand1){
 		    case 0:
+					break;
 		    case 1:
+					data_regs[REG_VAL_1] = reg_file[R3];
+					break;
 		    case 2:
+					break;
 		    case 3:
+					data_regs[REG_VAL_1] = reg_file[R3] & 0xFF;
+					break;
 		    case 4:
+					break;
 		    case 98:
+					data_regs[REG_VAL_1] = reg_file[R3];
 		      break;
 		    default:
 		      return false;
@@ -766,12 +777,12 @@ bool execute(){
 			}
 			break;
 		case 4: //BGT
-			if(data_regs[REG_VAL_1] > 0){
+			if(data_regs[REG_VAL_1] > 0 && data_regs[REG_VAL_1] != 4294967295){
 				reg_file[PC] = immediate;
 			}
 			break;
 		case 5: //BLT
-			if(data_regs[REG_VAL_1] < 0){
+			if(data_regs[REG_VAL_1] == 4294967295){
 				reg_file[PC] = immediate;
 			}
 			break;
@@ -818,7 +829,7 @@ bool execute(){
   	{
     	unsigned int address = reg_file[operand2]; // Address is in RG
     	if(address >= memorySize) return false;
-			globalCache->writeByte(address, static_cast<unsigned char>(data_regs[REG_VAL_1] & 0xFF));
+			globalCache->writeByte(address, static_cast<unsigned char>(data_regs[REG_VAL_1]));
   	}
   	break;
 		case 17: // ILDB
@@ -889,16 +900,16 @@ bool execute(){
 					exit(0);
 					break;
 				case 1: //Write int in R3 to stdout
-					cout << reg_file[R3];
+					cout << data_regs[REG_VAL_1];
 					break;
 				case 2: //Read an integer into R3 from stdin
 					cin >> reg_file[R3];
 					break;
 				case 3: //Write char in R3 to stdout
-					cout << static_cast<char>(reg_file[R3]);
+					cout << static_cast<char>(data_regs[REG_VAL_1]);
 					break;
 				case 4: //Read a char into R3 from stdin
-					reg_file[R3] = static_cast<unsigned int>(cin.get());
+					reg_file[R3] = static_cast<char>(cin.get());
 					break;
 				case 98: //Print all registers to stdout
 					for(size_t i = 0; i <= 15; ++i){
