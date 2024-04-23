@@ -847,6 +847,7 @@ bool execute(){
 			break;
 		case 7: //MOV
 			reg_file[operand1] = data_regs[REG_VAL_1]; //move contents of RS to RD
+			//cout << "R2 after mov: " << reg_file[operand1] << endl;
 			break;
 		case 8: //MOVI
 			reg_file[operand1] = immediate; //move immediate value into RD
@@ -875,13 +876,17 @@ bool execute(){
     	unsigned int address = reg_file[operand2]; // Address is in RG
     	if(address >= memorySize) return false;
 			globalCache->writeWord(address, data_regs[REG_VAL_1]);
+			cout << "storing prime number in ISTR: " << data_regs[REG_VAL_1] << endl;
   	}
   	break;
 		case 15: // ILDR
   	{
     	unsigned int address = data_regs[REG_VAL_1]; // Address is in RG
+			//cout << "storing in RD in ILDR: " << data_regs[REG_VAL_1] << endl;
     	if(address >= memorySize) return false;
 			reg_file[operand1] = globalCache->readWord(address);
+			cout << "R0 in ILDR: " << reg_file[operand1] << endl;
+      //cout << "RS in ILDR: " << data_regs[REG_VAL_1] << endl;
   	}
   	break;
 		case 16: // ISTB
@@ -900,15 +905,18 @@ bool execute(){
   	break;	
 		case 18: //ADD
 			reg_file[operand1] = data_regs[REG_VAL_1] + data_regs[REG_VAL_2]; //add RS1 to RS2, store in RD
+			cout << "R2 after adding: " << reg_file[operand1] << endl;
 			break;
 		case 19: //ADDI
 			reg_file[operand1] = data_regs[REG_VAL_1] + immediate; //Add Imm to RS1, store in RD
 			break;
 		case 20: //SUB
 			reg_file[operand1] = data_regs[REG_VAL_1] - data_regs[REG_VAL_2]; //subtract RS2 from RS1, store result in RD
+			cout << "R2 after subtracting: " << reg_file[operand1] << endl;
 			break;
 		case 21: //SUBI
 			reg_file[operand1] = data_regs[REG_VAL_1] - immediate; //subtract imm from RS1 store in RD
+			//cout << "operand value after SUBI: " << reg_file[operand1] << endl;
 			break;
 		case 22: //MUL
 			reg_file[operand1] = data_regs[REG_VAL_1] * data_regs[REG_VAL_2]; //multiply RS1 by RS2, store in RD
@@ -935,6 +943,9 @@ bool execute(){
 			reg_file[operand1] = (data_regs[REG_VAL_1] != 0 || data_regs[REG_VAL_2] != 0) ? 1 : 0; //logical || on RS1 and RS2
 			break;
 		case 29: //CMP
+			if(data_regs[REG_VAL_1] < 10 && data_regs[REG_VAL_2] < 10){
+				cout << "Comparing " << data_regs[REG_VAL_1] << " and " << data_regs[REG_VAL_2] << endl;
+			}
 			if(data_regs[REG_VAL_1] == data_regs[REG_VAL_2]){
 				reg_file[operand1] = 0;
 			}
